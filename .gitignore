@@ -1,0 +1,17 @@
+# Ham ve işlenmiş veri (yalnızca data/sample/ git'e girer)
+data/raw/
+data/processed/
+
+# Python / ortam
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Gizli bilgiler
+kaggle.json
+.env
+
+# Yerel çalışma dosyaları (diğerleri .git/info/exclude içinde)
+docs/REVIEW.md
+docs/review_diff.patch
