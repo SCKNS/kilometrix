@@ -69,11 +69,24 @@ Diğer (tekrar sayımı `id` hariç):
 - Boş olmayan tekrar gruplarındaki toplam satır (ilkler dahil): **270**, 132 grupta.
 - Önceki raporda yazan "295 yinelenen satır" = 157 boş + 138 dolu kopya; yanıltıcıydı.
 
+### Temizleme (Adım 2)
+`arac_fiyat.cleaning` → `data/processed/arabam_clean.csv`: 50 755 → **50 459** satır
+(−158 tamamen boş, −0 geçersiz fiyat, −138 id dışında birebir aynı satır; ilan no olmadığından
+bunların gerçekten aynı ilan olduğu kanıtlanamaz, "olası kopya"; 91'i Sahibinden, hiçbiri ≤ 100 km
+değil). Fiyat karşılaştırmaya dahil: kuralı daraltır, fiyat değerine göre seçim yapmaz. `kasa_tipi` içindeki `-` → boş.
+Aykırı km/fiyat değerlerine dokunulmadı (Adım 3, yalnızca train). `degisen_sayisi`/`boyali_sayisi`
+boşları "bilinmiyor" olarak bırakıldı (0 değil). Ayrıntı: `reports/adim2_temizleme.txt`.
+
 ### A'nın sınırları (README'ye taşınacak)
 - **İlan fiyatıdır**, gerçekleşen satış fiyatı değildir.
 - **Tek dönem** (Haziran 2025): enflasyon nedeniyle tahminler o tarihin TL seviyesindedir.
 - **Satır bazında tarih ve ilan no yok** → zaman bazlı ve kimlik bazlı bölme yapılamaz
-  (PROGRESS.md bölme kuralı dal 3: "muhtemelen aynı araç" grupları raporlanır).
+  (PROGRESS.md bölme kuralı dal 3: kimlik yerine marka+seri+model+yıl+km grubuyla grup bazlı bölme).
+  Bu grup anahtarı yaklaşıktır; km'si güncellenmiş veya model alanı farklı yazılmış yeniden ilanlar
+  ayrı gruba düşer. **Yeniden ilan sızıntısı azaltılır ama garanti engellenmez**; metrikler iyimser
+  yönde yanlı olabilir ve bu yanlılığın büyüklüğü bu veriyle ölçülemez.
+- **Yeniden ilan izi var:** id ve fiyat dışında tamamen aynı, fiyatı farklı 127 grup / 274 satır;
+  "muhtemelen aynı araç" 797 grubun 732'sinde fiyat farklı. Rastgele bölme bu yüzden iyimser olur.
 - **Marka dağılımı örnekleme kotası izlenimi veriyor** (büyük markalarda ~2 500 civarında tavan);
   piyasa paylarını temsil ettiği varsayılamaz.
 - **Kapsam binek otomobil**: SUV/arazi/pick-up çok az; uygulama bu araçlar için güvenilir değildir.

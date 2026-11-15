@@ -1,0 +1,30 @@
+ham: 50755 satır
+tamamen boş satırlar: -158 satır -> 50597 | NaN hücre: 26074 -> 23704
+fiyat geçerlilik kuralı: -0 satır -> 50597 | NaN hücre: 23704 -> 23704
+'-' ve boş metin -> NaN: -0 satır -> 50597 | NaN hücre: 23704 -> 23792
+birebir yinelenen (id hariç): -138 satır -> 50459 | NaN hücre: 23792 -> 23733
+  atılan olası kopyalar: kimden {'Sahibinden': 91, 'Galeriden': 46, 'Yetkili Bayiden': 1}; km <= 100: 0
+tam sayı tipleri: -0 satır -> 50459 | NaN hücre: 23733 -> 23733
+tam sayı sütun tipleri: {'yil': 'Int64', 'kilometre': 'Int64', 'fiyat': 'Int64'}
+son koşullar (id tekil, fiyat > 0, yer tutucu yok, Int64, kopya yok): geçti
+
+temiz veri: 50459 satır x 16 sütun
+eksik değerler (yalnızca > 0):
+  model: 173 (0.3%)
+  vites_tipi: 25 (0.0%)
+  kasa_tipi: 105 (0.2%)
+  renk: 1 (0.0%)
+  motor_hacmi: 1467 (2.9%)
+  motor_gucu: 1500 (3.0%)
+  degisen_sayisi: 10231 (20.3%)
+  boyali_sayisi: 10231 (20.3%)
+degisen ve boyali birlikte boş: 10231
+kasa_tipi değerleri: {'Sedan': 26379, 'Hatchback/5': 19359, 'Station wagon': 1442, 'Hatchback/3': 978, 'Coupe': 966, 'MPV': 861, 'SUV': 167, 'Cabrio': 144, nan: 105, 'Roadster': 42, 'Pick-up': 16}
+
+çok benzer ilan (marka+seri+model+yil+kilometre+fiyat): 149 grup, 302 satır
+muhtemelen aynı araç (marka+seri+model+yil+kilometre+renk): 797 grup, 1727 satır
+  bunlardan fiyatı farklı olan: 732 grup, 1596 satır
+id ve fiyat dışında tamamen aynı, fiyatı farklı: 127 grup, 274 satır
+bölme grup anahtarı (marka+seri+model+yil+kilometre): 48235 grup; 2+ satırlı 1812 grup, 4036 satır; en büyük grup 15 satır
+
+yazıldı: data\processed\arabam_clean.csv

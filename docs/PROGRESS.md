@@ -2,8 +2,8 @@
 
 ## Yol haritası
 - [x] Adım 0: İskelet, git init — **TAMAMLANDI**
-- [ ] Adım 1: İki veri setini incele (şema, satır sayısı, eksikler, dönem); **kaynak, ülke ve lisansı doğrula, DATA.md atıf bölümünü doldur**; birleştirme kararını kullanıcıya sor. Doğrulanamayan veya Türkiye dışı veri kullanılmaz. — **TAMAMLANDI**
-- [ ] Adım 2: Temizleme
+- [x] Adım 1: İki veri setini incele (şema, satır sayısı, eksikler, dönem); **kaynak, ülke ve lisansı doğrula, DATA.md atıf bölümünü doldur**; birleştirme kararını kullanıcıya sor. Doğrulanamayan veya Türkiye dışı veri kullanılmaz. — **TAMAMLANDI**
+- [x] Adım 2: Temizleme — **TAMAMLANDI**
 - [ ] Adım 3: Özellik hazırlama, basit baseline model, hata ölçümü (aşağıdaki "Değerlendirme kuralları"na göre; test açılmaz)
 - [ ] KONTROL: **Doğrulama (CV) MAPE'si** yaklaşık %20'nin üstündeyse dur, durumu anlat, birlikte karar verelim. Test MAPE'si bu kararda kullanılmaz.
 - [ ] Adım 4: Model karşılaştırma ve ayar (CV ile); en sonda seçilen nihai model test setinde **bir kez** değerlendirilir
@@ -53,7 +53,9 @@
 - Train ve testten atılan satır sayısı ayrı ayrı raporlanır.
 
 **Sızıntı önlemleri**
-- Yinelenen ilanlar bölmeden **önce** temizlenir; kalan çok benzer ilanların (aynı marka-model-yıl-km-fiyat) sayısı raporlanır.
+- Yinelenen ilanlar bölmeden **önce** temizlenir (A'da: id hariç tüm sütunlar, fiyat dahil, birebir aynı;
+  fiyatın dahil olması kuralı daraltır, fiyat değerine/eşiğe göre seçim yapmaz. Bu satırlar `GROUP_KEY`
+  altında zaten aynı gruptadır; silmek bölmeyi değil yalnızca ağırlığı etkiler); kalan çok benzer ilanların (aynı marka-model-yıl-km-fiyat) sayısı raporlanır.
 - **Bölme türü (bu sırayla karar verilir):**
   1. Geçerli bir ilan tarihi sütunu varsa **varsayılan zaman bazlı holdout**: eski → train, en yeni dilim → test.
      Rastgele bölmeye ancak tarih güvenilmezse (çoğu boş, tek gün vb.) dönülür; gerekçe yazılır.
@@ -64,8 +66,18 @@
      - **Yeniden ilan**: kimliği train'de de bulunan ilanlar (aynı aracın daha sonraki ilanı).
      Bu doğrudan hedef sızıntısı değildir (eski ilan geçmiş bilgidir), ama model aynı aracın eski
      fiyatını görmüştür; bu yüzden iki alt küme ayrı ölçülür.
-  3. Kimlik yoksa, aynı marka-model-yıl-km-renk gibi "muhtemelen aynı araç" gruplarının train/test'e
-     bölünme sayısı raporlanır (yeniden yayımlanmış ilan riski).
+  3. Kimlik yoksa **"muhtemelen aynı araç" grubu kimlik yerine geçer ve grup bazlı bölme zorunludur**
+     (yeniden yayımlanmış ilan riski). A için grup anahtarı: `marka+seri+model+yil+kilometre`
+     (`cleaning.GROUP_KEY`; renk ve fiyat bilerek dışarıda, böylece hem "çok benzer ilan" hem
+     "muhtemelen aynı araç" grupları bölünmez). Holdout `GroupShuffleSplit`, CV `GroupKFold`
+     (`shuffle=True`, sabit `random_state`); aynı grup hem train'de hem doğrulama/testte olamaz.
+     **Sınır:** Bu anahtar yaklaşıktır; gerçek yeniden ilan sızıntısını **garanti engellemez** (km'si
+     güncellenmiş, seri/model alanı farklı yazılmış aynı araç başka gruba düşer). Bu yüzden dal 3'teki
+     metrikler "daha önce görülmemiş araç" hatası olarak değil, **iyimser olabilecek bir tahmin** olarak
+     sunulur ve her raporda bu sınır adıyla yazılır.
+     Ana metrikler bu grup bazlı bölmeden raporlanır. Rastgele (grupsuz) bölme ana değerlendirme
+     olarak kullanılmaz; istenirse yalnızca kıyas için, adıyla ayrıca verilir. Test ve her CV fold'u
+     için grup ve satır sayıları raporlanır.
   4. Hiçbiri yoksa rastgele bölme + sabit `random_state`, gerekçesi yazılır.
 - **Değerlendirme kapsamı (tarih + kimlik birlikteyse):** Uygulamanın kullanım senaryosu, kullanıcının
   modelin daha önce görmediği bir aracı girmesidir. Bu yüzden:
@@ -89,7 +101,8 @@
     ilan satırları atılmaz; aynı fold modelleriyle ayrıca skorlanıp raporlanır. Her fold için iki alt
     kümenin satır sayısı raporlanır. `GroupKFold` burada kullanılmaz (kronolojiyi bozar); düz
     `TimeSeriesSplit` da tek başına kullanılmaz (iki alt kümeyi karıştırır).
-  - İkisi de yok: `KFold(shuffle=True, random_state=...)`.
+  - Kimlik yerine "muhtemelen aynı araç" grubu (dal 3): `GroupKFold` (grup = `GROUP_KEY`).
+  - Hiçbiri yok: `KFold(shuffle=True, random_state=...)`.
 - Fiyattan türetilen veya ilan sonrası bilgi taşıyan sütunlar (ör. "fiyat/km", "satıldı mı") özellik olarak kullanılmaz.
 
 ## Denetçi promptu (her adım sonunda N yerine adım numarası)
@@ -184,8 +197,8 @@ Bu bir ikinci el araç fiyat tahmin projesi (klasik ML, LLM yok). Proje klasör�
 **Kararlar**
 - **Yalnızca A kullanılır** (kullanıcı kararı bana bıraktı: "CV için, en mantıklı hangisiyse").
   Gerekçe DATA.md "Karar" bölümünde: B doğrulanamıyor, getirisi küçük (~%13), dönem ve biçim farkı gürültü.
-- A'da tarih ve kimlik olmadığından bölme kuralı **dal 3**: "muhtemelen aynı araç" gruplarının
-  train/test'e dağılımı raporlanacak (Adım 3). Grup bazlı bölme bu anahtarla Adım 3'te değerlendirilecek.
+- A'da tarih ve kimlik olmadığından bölme kuralı **dal 3** (Adım 2 denetiminde bağlayıcı yapıldı:
+  `GROUP_KEY` ile grup bazlı bölme zorunlu).
 - Geçerlilik kuralı için kaynak belgesinde özel "fiyat yok" değeri yok → yalnızca boş / sayı değil / ≤ 0.
 - Uygulama kapsamı binek otomobil (SUV/pick-up çok az); README'ye Adım 7'de yazılacak.
 
@@ -204,4 +217,59 @@ Bu bir ikinci el araç fiyat tahmin projesi (klasik ML, LLM yok). Proje klasör�
 3. Marka dağılımı ifadesi "örnekleme kotası izlenimi; piyasa payı varsayılamaz" oldu.
 4. Ayrıştırıcılar `inspect_raw.py`'ye taşındı; sayı ayrıştırıcı artık eksi/ondalığı silmiyor (NaN veya korunur).
 
-**Sıradaki adım:** Adım 2 — temizleme (yalnızca A).
+### Adım 2 — Temizleme (yalnızca A)
+**Durum:** TAMAMLANDI (kullanıcı onayıyla commit edildi)
+**Commit mesajı:** `Adım 2: veri temizlendi`
+
+**Yapılanlar**
+- `cleaning.py`: küçük fonksiyonlar + `main()`. Çalıştırma: `PYTHONPATH=src python -m arac_fiyat.cleaning`.
+- Çıktılar: `data/processed/arabam_clean.csv` (git dışı), `reports/adim2_temizleme.txt` (git'e girer).
+- Sıra: tamamen boş satır → fiyat geçerlilik kuralı → `-`/boş metin → NaN → birebir kopya (id hariç) → tam sayı tipleri.
+- Her adım satır farkı **ve NaN hücre farkı** yazar; sonda `check_clean` son koşulları doğrular (`ValueError`; `python -O` ile kapanmaz).
+- Sonuç: 50 755 → 50 459 satır (−158 boş, −0 geçersiz fiyat, −138 kopya).
+
+**Kararlar**
+- Yalnızca anlamca kesin işler yapıldı. km/fiyat aykırıları (km 90 000 000, fiyat 595 000 000) **dokunulmadı**:
+  ampirik kural, Adım 3'te bölmeden sonra yalnızca train'den belirlenecek.
+- `degisen_sayisi`/`boyali_sayisi` boşları **bilinmiyor** sayıldı, 0 yapılmadı. Gerekçe: veride gerçek 0 çok
+  (değişen 26 546, boyalı 17 362); iki sütun hep birlikte boş (10 231); boşların %72'si "Sahibinden"; boş
+  satırların fiyat medyanı daha düşük (425 bin ↔ 650 bin, ham veri, yalnızca tanıma amaçlı). Boşluk bilgi
+  taşıyor → Adım 3'te eksiklik göstergesi + Pipeline içinde doldurma.
+- Elektrikli araçlarda `motor_hacmi` çoğunlukla boş (207/222, ham veri): yapısal boşluk, Adım 3'te ele alınacak.
+- `id` tutuldu (ham veriye geri izleme için); özellik olarak kullanılmayacak.
+
+**Adım 3'e devredilenler**
+- Çok benzer ilan (marka+seri+model+yıl+km+fiyat): 149 grup, 302 satır — atılmadı, raporlandı.
+- Muhtemelen aynı araç (marka+seri+model+yıl+km+renk): 797 grup, 1 727 satır; 732 grubunda fiyat farklı.
+- id ve fiyat dışında tamamen aynı, fiyatı farklı: 127 grup, 274 satır (yeniden ilan izi).
+- **Grup bazlı bölme zorunlu**, anahtar `GROUP_KEY` = marka+seri+model+yıl+km: 48 235 grup;
+  2+ satırlı 1 812 grup / 4 036 satır; en büyük grup 15 (Tofaş Şahin 1994, 100 000 km gibi yuvarlak km;
+  farklı araçları da birleştirebilir, bu yalnızca bölmeyi daha temkinli yapar). Anahtar yaklaşıktır:
+  km'si güncellenmiş / model alanı farklı yeniden ilanları yakalayamaz, sızıntıyı garanti engellemez.
+- Seyrek kategoriler: Pick-up 16, Rent a Car 4, tek ilanlı markalar.
+
+**Açık sorunlar**
+- Birim testi (pytest) yok; yerine her çalıştırmada `check_clean` son koşulları denetliyor. Şema
+  değişirse hata çalışma anında çıkar. Test altyapısı gerekirse Adım 3'te özellik kodlarıyla eklenebilir.
+
+**Denetim 1 düzeltmeleri** (4 bulgunun 4'ü kabul edildi)
+1. (Orta) Grup bazlı bölme "değerlendirilecek" değil, **zorunlu** yapıldı (yukarıdaki dal 3 ve CV kuralı).
+   Denetçinin 127 grup / 274 satır ve 732/797 sayıları yeniden hesaplandı, aynı çıktı; artık betik basıyor.
+2. (Düşük) "Sızıntı önlemi / birebir yinelenen" kesinliği kaldırıldı: docstring ve DATA.md'de "olası kopya,
+   ilan no olmadan kanıtlanamaz".
+3. (Düşük) Günlük her adımda NaN hücre farkını ve sonda Int64 tiplerini yazıyor; yer tutucu adımı
+   NaN +88 gösteriyor (= 88 `kasa_tipi == "-"`).
+4. (Düşük) `check_clean` son koşul kontrolü eklendi (id tekil, fiyat > 0, yer tutucu yok, Int64,
+   id hariç kopya yok). pytest eklenmedi (yeni paket, bu adımda gerekmedi).
+
+**Denetim 2 düzeltmeleri** (3 bulgunun 3'ü kabul edildi; tur öncesi staged ağaç `c28cef00add1a0d8d290cb6e2f8b13f1922a9c02`)
+1. (Orta) 138 olası kopyanın fiyat dahil karşılaştırılıp bölmeden önce silinmesi: **silme korunur**, karar
+   gerekçelendi. Fiyat anahtarda olunca kural daralır (fiyatı farklı yeniden ilanlar silinmez, hangi fiyatın
+   tutulacağı seçilmez); fiyat değerine/eşiğe göre seçim yok. Bu satırlar `GROUP_KEY`'de zaten aynı gruptadır,
+   silinmeseler de train/test'e bölünemezdi; silme yalnızca çift sayımı (eğitimde ağırlık, değerlendirmede
+   aynı ilanın iki kez ölçülmesi) kaldırır. Profil: 91 Sahibinden / 46 Galeriden / 1 Yetkili Bayi; ≤ 100 km
+   hiç yok → "aynı özellikli farklı sıfır araç" açıklaması zayıf. Betik bu profili artık basıyor.
+2. (Orta) Grup anahtarının sızıntıyı **garanti engellemediği** PROGRESS.md dal 3, DATA.md, `cleaning.py`
+   yorumu ve REVIEW.md'de açıkça yazıldı; dal 3 metrikleri "iyimser olabilecek tahmin" olarak sunulacak.
+3. (Düşük) `check_clean` içindeki `assert`'ler `require()` → `ValueError` ile değiştirildi; `python -O`
+   altında bozuk veri hata veriyor (doğrulandı). Temiz CSV değişmedi (SHA-256 aynı).
