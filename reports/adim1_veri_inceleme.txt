@@ -1,0 +1,105 @@
+
+========== A: car_price_prediction.csv (arabam.com, Tanrıverdi) ==========
+satır, sütun: (50755, 16)
+                    tip  eksik  eksik_%  farkli
+id                int64      0      0.0   50755
+marka               str    158      0.3      76
+seri                str    158      0.3     542
+model               str    331      0.7    3302
+yil             float64    158      0.3      57
+kilometre       float64    158      0.3    5550
+vites_tipi          str    183      0.4       3
+yakit_tipi          str    158      0.3       5
+kasa_tipi           str    175      0.3      11
+renk                str    159      0.3      24
+motor_hacmi     float64   1627      3.2     319
+motor_gucu      float64   1661      3.3     251
+degisen_sayisi  float64  10416     20.5      10
+boyali_sayisi   float64  10416     20.5      13
+kimden              str    158      0.3       4
+fiyat           float64    158      0.3    4618
+
+id = 1..N satır sırası mı: True
+
+[id hariç tekrar analizi]
+tamamen boş satır: 158
+boş olmayan satırlarda fazladan kopya (ilki hariç): 138
+boş olmayan tekrar gruplarındaki toplam satır (ilkler dahil): 270
+boş olmayan tekrar grubu sayısı: 132
+
+yil aralığı: 1951.0 - 2025.0
+yil dağılımı (son 5 yıl): {2021.0: 1618, 2022.0: 1380, 2023.0: 1757, 2024.0: 1039, 2025.0: 65}
+kilometre yüzdelikleri: {0.0: 0.0, 0.01: 6998.0, 0.25: 115850.0, 0.5: 189000.0, 0.75: 255000.0, 0.99: 460000.0, 1.0: 90000000.0}
+kilometre == 0 satır: 39
+fiyat yüzdelikleri (TL): {0.0: 10000.0, 0.01: 114000.0, 0.25: 360000.0, 0.5: 608000.0, 0.75: 1021750.0, 0.99: 4925000.0, 1.0: 595000000.0}
+fiyat <= 0: 0 | fiyat boş: 158
+
+marka sayısı: 76; marka başına ilan en çok 2491, 2400 üstü marka sayısı: 16
+en az ilanlı 5 marka: {'Buick': 1, 'Isuzu': 1, 'Leapmotor': 1, 'Lincoln': 1, 'Aion': 1}
+vites_tipi: {'Düz': 27339, 'Otomatik': 19629, 'Yarı Otomatik': 3604, nan: 183}
+yakit_tipi: {'Benzin': 27158, 'LPG & Benzin': 12728, 'Dizel': 10232, 'Hibrit': 257, 'Elektrik': 222, nan: 158}
+kasa_tipi: {'Sedan': 26457, 'Hatchback/5': 19414, 'Station wagon': 1442, 'Hatchback/3': 979, 'Coupe': 966, 'MPV': 865, nan: 175, 'SUV': 167, 'Cabrio': 144, '-': 88, 'Roadster': 42, 'Pick-up': 16}
+kimden: {'Sahibinden': 25277, 'Galeriden': 24848, 'Yetkili Bayiden': 468, nan: 158, 'Rent a Car': 4}
+
+========== B: car_prices_tr.csv (Car Prices Turkey, Gülşen) ==========
+satır, sütun: (6675, 28)
+                                       tip  eksik  eksik_%  farkli
+ilanBasligi                            str      0      0.0    5412
+adres                                  str      0      0.0    3170
+il                                     str      0      0.0      81
+fiyat(TRY)                             str      0      0.0    1376
+ilanID                               int64      0      0.0    6675
+ilanTarihi                             str      0      0.0      62
+marka                                  str      0      0.0      39
+seri                                   str      0      0.0     214
+model                                  str      1      0.0    1369
+kilometre(Km)                      float64      1      0.0      47
+yıl                                    str      0      0.0    1302
+vitesTipi                              str      1      0.0       3
+yakitTuru                              str      1      0.0       5
+kasaTipi                               str    119      1.8       9
+renk                                   str   2455     36.8      23
+motorHacmi(Cc)                         str    191      2.9     153
+motorGucu(HP)                          str    198      3.0     163
+cekisTipi                              str    237      3.6       3
+boyaParcaDurumu                        str      0      0.0    2731
+takasUygunluk                          str   3797     56.9       2
+saticiTuru                             str   3098     46.4       4
+aracVergisi(TRY)                       str   4714     70.6      49
+hasarGecmisi                           str   3584     53.7     602
+orjinal_parça_sayısı                 int64      0      0.0      14
+lokal_boyalı_parça_sayısı            int64      0      0.0      12
+boyalı_parça_sayısı                  int64      0      0.0      14
+değişen_parça_sayısı                 int64      0      0.0      10
+durumu_belirtilmemiş_parça_sayısı    int64      0      0.0      14
+
+'kilometre(Km)' değerlerinin 1950-2026 arasında olma oranı: 0.9999
+'yıl' değerlerinin ' km' ile bitme oranı: 0.9999
+
+fiyat 'TL' ile bitmeyen: 0
+fiyat sayıya çevrilemeyen: 0 | fiyat <= 0: 0
+fiyat yüzdelikleri (TL): {0.0: 40000.0, 0.01: 145000.0, 0.25: 368500.0, 0.5: 559000.0, 0.75: 855000.0, 0.99: 4278900.0, 1.0: 38500000.0}
+km ('yıl' sütunundan) yüzdelikleri: {0.0: 0.0, 0.01: 9000.0, 0.25: 135000.0, 0.5: 200000.0, 0.75: 266000.0, 0.99: 437810.0, 1.0: 99999999.0}
+
+ilanTarihi çevrilemeyen: 0
+ilanTarihi aralığı: 2024-12-30 - 2025-04-17
+aylara göre ilan: {Period('2024-12', 'M'): 2, Period('2025-01', 'M'): 4, Period('2025-02', 'M'): 20, Period('2025-03', 'M'): 128, Period('2025-04', 'M'): 6521}
+en yoğun 5 gün: {datetime.date(2025, 4, 7): 2937, datetime.date(2025, 4, 8): 1286, datetime.date(2025, 4, 17): 536, datetime.date(2025, 4, 6): 448, datetime.date(2025, 4, 9): 410}
+
+ilanID yinelenen: 0
+ilanID hariç birebir yinelenen satır: 1
+il sayısı: 81
+motorHacmi(Cc): aralık/metin biçiminde 857 satır, boş 191
+motorGucu(HP): aralık/metin biçiminde 869 satır, boş 198
+vitesTipi: {'Düz': 4036, 'Otomatik': 2009, 'Yarı Otomatik': 629, nan: 1}
+yakitTuru: {'Dizel': 2724, 'LPG & Benzin': 2185, 'Benzin': 1725, 'Hibrit': 26, 'Elektrik': 14, nan: 1}
+kasaTipi: {'Sedan': 3553, 'Hatchback/5': 2411, 'Hatchback/3': 189, 'Station wagon': 159, 'Coupe': 119, nan: 119, 'MPV': 105, 'Cabrio': 14, 'Roadster': 5, 'SUV': 1}
+cekisTipi: {'Önden Çekiş': 5696, 'Arkadan İtiş': 547, nan: 237, '4WD (Sürekli)': 195}
+saticiTuru: {nan: 3098, 'Sahibinden': 2617, 'Galeriden': 941, 'Yetkili Bayiden': 18, 'Belirtilmemiş': 1}
+takasUygunluk: {nan: 3797, 'Takasa Uygun': 1843, 'Takasa Uygun Değil': 1035}
+hasarGecmisi en sık 5: {nan: 3584, 'tutarı yok': 920, 'tutarı belirtilmemiş': 331, 'Tramer tutarı yok': 207, 'Tramer tutarı belirtilmemiş': 81}
+
+========== A ile B karşılaştırma ==========
+yalnızca B'de olan markalar: []
+A'da olup B'de olmayan marka sayısı: 37
+B'deki 6674 satırdan A'da marka+yıl+km+fiyat ile eşleşen: 123

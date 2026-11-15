@@ -2,7 +2,7 @@
 
 ## Yol haritası
 - [x] Adım 0: İskelet, git init — **TAMAMLANDI**
-- [ ] Adım 1: İki veri setini incele (şema, satır sayısı, eksikler, dönem); **kaynak, ülke ve lisansı doğrula, DATA.md atıf bölümünü doldur**; birleştirme kararını kullanıcıya sor. Doğrulanamayan veya Türkiye dışı veri kullanılmaz.
+- [ ] Adım 1: İki veri setini incele (şema, satır sayısı, eksikler, dönem); **kaynak, ülke ve lisansı doğrula, DATA.md atıf bölümünü doldur**; birleştirme kararını kullanıcıya sor. Doğrulanamayan veya Türkiye dışı veri kullanılmaz. — **TAMAMLANDI**
 - [ ] Adım 2: Temizleme
 - [ ] Adım 3: Özellik hazırlama, basit baseline model, hata ölçümü (aşağıdaki "Değerlendirme kuralları"na göre; test açılmaz)
 - [ ] KONTROL: **Doğrulama (CV) MAPE'si** yaklaşık %20'nin üstündeyse dur, durumu anlat, birlikte karar verelim. Test MAPE'si bu kararda kullanılmaz.
@@ -159,4 +159,49 @@ Bu bir ikinci el araç fiyat tahmin projesi (klasik ML, LLM yok). Proje klasör�
 - Git kimliği yalnızca bu repoya (yerel) ayarlandı; global ayar boş.
 - `origin`: private GitHub reposu `arac-fiyat-tahmin`.
 
-**Sıradaki adım:** Adım 1 — veri setlerini incele.
+### Adım 1 — Veri setlerinin incelenmesi ve kaynak doğrulama
+**Durum:** TAMAMLANDI (denetim 1 düzeltmelerinden sonra kullanıcı onayıyla commit edildi)
+**Commit mesajı:** `Adım 1: veri setleri incelendi`
+
+**Yapılanlar**
+- `config.py`: proje kökü, veri/rapor yolları, iki ham dosya yolu, `RANDOM_STATE = 42`.
+- `data_loader.py`: `load_arabam()`, `load_car_prices_tr()` — ham CSV'yi olduğu gibi okur.
+- `parse_tr_number()`, `parse_tr_date()`: yalnızca B'yi incelemek için, `inspect_raw.py` içinde
+  (denetim sonrası `cleaning.py`'den taşındı; `cleaning.py` Adım 0 hâline döndü).
+- `inspect_raw.py`: tek seferlik inceleme betiği; çıktısı `reports/adim1_veri_inceleme.txt`.
+- Kaynaklar Kaggle'ın herkese açık Croissant meta verisinden (kimlik bilgisi olmadan) doğrulandı;
+  `docs/DATA.md` dolduruldu (kaynak, yazar, lisans, dönem, sütunlar, sınırlar, atıf).
+- README'deki "henüz doğrulanmadı" notu kaldırıldı, veri cümlesi güncellendi.
+
+**Bulgular (özet; ayrıntı DATA.md)**
+- A `car_price_prediction.csv` = Tanrıverdi, arabam.com, Haziran 2025. 50 755 × 16.
+  Lisans çelişkili: lisans alanı CC0, alt başlık "Non-commercial use".
+  158 tamamen boş satır; boş olmayanlarda 138 fazladan kopya (270 satır, 132 grup).
+  Gürcistan verisi **değil** (Adım 0 açık sorunu kapandı). Satır tarihi ve ilan no yok (`id` = satır sırası).
+- B `car_prices_tr.csv` = Gülşen, CC BY-SA 4.0, 6 675 × 28, 2024-12-30 – 2025-04-17 (%97,7 Nisan).
+  Belirttiği üst kaynak Kaggle'da 404; ilan sitesi yazılı değil. `kilometre(Km)` ↔ `yıl` kaymış.
+
+**Kararlar**
+- **Yalnızca A kullanılır** (kullanıcı kararı bana bıraktı: "CV için, en mantıklı hangisiyse").
+  Gerekçe DATA.md "Karar" bölümünde: B doğrulanamıyor, getirisi küçük (~%13), dönem ve biçim farkı gürültü.
+- A'da tarih ve kimlik olmadığından bölme kuralı **dal 3**: "muhtemelen aynı araç" gruplarının
+  train/test'e dağılımı raporlanacak (Adım 3). Grup bazlı bölme bu anahtarla Adım 3'te değerlendirilecek.
+- Geçerlilik kuralı için kaynak belgesinde özel "fiyat yok" değeri yok → yalnızca boş / sayı değil / ≤ 0.
+- Uygulama kapsamı binek otomobil (SUV/pick-up çok az); README'ye Adım 7'de yazılacak.
+
+**Açık sorunlar**
+- A'da marka başına ~2 500 tavanı: örnekleme kotası izlenimi veriyor; piyasa paylarını temsil ettiği
+  varsayılamaz (yorum, kanıt değil).
+- A'nın lisansı çelişkili (CC0 ↔ "Non-commercial use"); proje ticari değil, ticari kullanımda yazara sorulmalı.
+- A'da km en büyük 90 000 000, fiyat en büyük 595 000 000 TL: Adım 2-3'te ampirik kurala aday
+  (eşikler yalnızca train'den, bölmeden sonra).
+- `degisen_sayisi`/`boyali_sayisi` %20,5 boş; "boş = 0 mı, bilinmiyor mu" Adım 2'de karar.
+
+**Denetim 1 düzeltmeleri** (2 zorunlu + 2 isteğe bağlı bulgunun 4'ü kabul edildi)
+1. Lisans: "temiz" ifadesi kaldırıldı; CC0 ↔ "Non-commercial use" çelişkisi DATA.md ve REVIEW.md'de
+   (meta verinin `alternateName` alanından doğrulandı).
+2. Tekrar sayımı ayrıştırıldı: 158 boş / 138 dolu kopya / 270 satır (132 grup); betik ayrı basıyor.
+3. Marka dağılımı ifadesi "örnekleme kotası izlenimi; piyasa payı varsayılamaz" oldu.
+4. Ayrıştırıcılar `inspect_raw.py`'ye taşındı; sayı ayrıştırıcı artık eksi/ondalığı silmiyor (NaN veya korunur).
+
+**Sıradaki adım:** Adım 2 — temizleme (yalnızca A).

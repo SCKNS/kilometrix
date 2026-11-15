@@ -4,9 +4,6 @@ Türkiye ikinci el araç fiyatlarını tahmin etmeyi hedefleyen bir makine öğr
 Klasik ML modelleri kullanılır; SHAP ile her özelliğin fiyata etkisi gösterilir ve
 Streamlit arayüzü üzerinden tahmin yapılabilir.
 
-> Not: Kullanılacak veri setlerinin kaynağı, ülkesi ve lisansı henüz doğrulanmadı
-> (Adım 1). Bkz. [docs/DATA.md](docs/DATA.md).
-
 > Proje geliştirme aşamasındadır. İlerleme için [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Özellikler (planlanan)
@@ -36,6 +33,9 @@ Kod `src/` altında olduğundan betikler proje kökünden şöyle çalıştırı
 $env:PYTHONPATH = "src"
 # macOS / Linux / Git Bash
 export PYTHONPATH=src
+
+# Ham veri incelemesi (Adım 1)
+python -m arac_fiyat.inspect_raw
 ```
 
 ## Klasör yapısı
@@ -50,9 +50,9 @@ docs/        ilerleme ve veri belgeleri
 ```
 
 ## Veri
-Proje sahibinin Kaggle'dan indirdiğini belirttiği iki veri seti kullanılacaktır. Kaynak, ülke ve lisans Adım 1'de
-doğrulanacak; lisansı kullanıma uygun olmayan veya Türkiye dışı veri kullanılmayacak.
-Ayrıntılar: [docs/DATA.md](docs/DATA.md).
+arabam.com'daki Haziran 2025 ilanlarından oluşan Kaggle veri seti (~50 bin ilan). Lisans çelişkili: Kaggle lisans alanı CC0, sayfa alt başlığı "Non-commercial use";
+bu proje ticari değildir (ayrıntı `docs/DATA.md`).
+Tam atıf ve veri sınırları Adım 7'de buraya taşınacak; şimdilik: [docs/DATA.md](docs/DATA.md).
 
 ## Sonuçlar
 Henüz yok.
