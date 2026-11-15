@@ -4,8 +4,8 @@
 - [x] Adım 0: İskelet, git init — **TAMAMLANDI**
 - [x] Adım 1: İki veri setini incele (şema, satır sayısı, eksikler, dönem); **kaynak, ülke ve lisansı doğrula, DATA.md atıf bölümünü doldur**; birleştirme kararını kullanıcıya sor. Doğrulanamayan veya Türkiye dışı veri kullanılmaz. — **TAMAMLANDI**
 - [x] Adım 2: Temizleme — **TAMAMLANDI**
-- [ ] Adım 3: Özellik hazırlama, basit baseline model, hata ölçümü (aşağıdaki "Değerlendirme kuralları"na göre; test açılmaz)
-- [ ] KONTROL: **Doğrulama (CV) MAPE'si** yaklaşık %20'nin üstündeyse dur, durumu anlat, birlikte karar verelim. Test MAPE'si bu kararda kullanılmaz.
+- [x] Adım 3: Özellik hazırlama, basit baseline model, hata ölçümü (aşağıdaki "Değerlendirme kuralları"na göre; test açılmaz) — **TAMAMLANDI**
+- [x] KONTROL (Adım 3 sonucu: Ridge CV MAPE %11,8 → eşiğin altında; kullanıcı onayladı): **Doğrulama (CV) MAPE'si** yaklaşık %20'nin üstündeyse dur, durumu anlat, birlikte karar verelim. Test MAPE'si bu kararda kullanılmaz.
 - [ ] Adım 4: Model karşılaştırma ve ayar (CV ile); en sonda seçilen nihai model test setinde **bir kez** değerlendirilir
 - [ ] Adım 5: SHAP ve grafikler
 - [ ] Adım 6: Streamlit arayüzü
@@ -273,3 +273,60 @@ Bu bir ikinci el araç fiyat tahmin projesi (klasik ML, LLM yok). Proje klasör�
    yorumu ve REVIEW.md'de açıkça yazıldı; dal 3 metrikleri "iyimser olabilecek tahmin" olarak sunulacak.
 3. (Düşük) `check_clean` içindeki `assert`'ler `require()` → `ValueError` ile değiştirildi; `python -O`
    altında bozuk veri hata veriyor (doğrulandı). Temiz CSV değişmedi (SHA-256 aynı).
+
+### Adım 3 — Özellikler, baseline'lar, CV ile hata ölçümü (test açılmadı)
+**Durum:** TAMAMLANDI (kullanıcı onayıyla commit edildi)
+**Commit mesajı:** `Adım 3: özellikler ve baseline modeller`
+
+**Yapılanlar**
+- `split.py` (yeni): `holdout_split` (GroupShuffleSplit, test ≈ %20 grup), `cv_folds` (GroupKFold 5 kat,
+  `shuffle=True`, `RANDOM_STATE`), `count_shared_groups` (sızıntı kontrolü). Grup = `GROUP_KEY` (dal 3).
+- `features.py`: `add_features` (durumsuz: yas = 2025 − yıl, log_km, marka / marka_seri /
+  marka_seri_model birleşik kategorileri, boş kategori → "bilinmiyor") + `build_preprocessor`
+  (sayısal: medyan doldurma + eksiklik göstergesi + ölçekleme; kategorik: one-hot, görülmeyen → sıfır).
+  Hepsi Pipeline içinde, yalnızca fold-train'e fit.
+- `evaluate.py`: MAPE, medyan APE, MAE, RMSE (TL), fiyat çeyreğine göre MAPE (çeyrek sınırı fold-train'den).
+- `train.py`: iki baseline (genel medyan, marka+seri+model → marka+seri → marka → genel medyan) +
+  `ridge_log` (log fiyat üzerinde Ridge, alpha=1 ayarsız). Çalıştırma: `PYTHONPATH=src python -m arac_fiyat.train`.
+  Çıktı: `reports/adim3_baseline.txt`. Model dosyası kaydedilmedi (Adım 4'te).
+
+**Bölme** (dal 3; metrikler "iyimser olabilecek tahmin", anahtar sızıntıyı garanti engellemez)
+- Train 40 391 satır / 38 588 grup; test 10 068 satır / 9 647 grup; ortak grup 0. Test **açılmadı**;
+  test id listesinin SHA-256'sı rapora yazıldı (Adım 4'te aynı bölme kontrolü).
+- 5 fold: her biri ~32 300 train / ~8 070 doğrulama satırı, 7 717-7 718 doğrulama grubu, ortak grup 0.
+
+**Ampirik eğitim süzgeci — ana sonuçta KULLANILMIYOR** (denetim 1 sonrası)
+- Sınırlar (her fold'un train kısmından fiyat %0,1 / %99,9, km %99,9) yalnızca iki yerde: "doğrulama_süzülmüş"
+  duyarlılık analizi ve süzgeçli **karşılaştırma** koşusu (eğitimden fold başına 92-98 satır çıkar).
+- Gerekçe: süzgeç Ridge CV MAPE'yi yalnızca 0,035 puan düşürüyor (11,824 → 11,789), MAE/RMSE'yi kötüleştiriyor;
+  süzülen satırların geçersiz olduğuna dair kanıt da yok.
+- "Tekrar rakamlı" fiyatlar (train'de 999999 ×10, 99999 ×3 vb. 17 satır) gerçek fiyat olabilir; atılmadı.
+
+**CV sonuçları** (süzgeçsiz eğitim; doğrulama = ana metrik, 5 fold ortalaması)
+| model | train MAPE | doğrulama MAPE | medyan APE | MAE (TL) | RMSE (TL) |
+|---|---|---|---|---|---|
+| genel medyan | 73,5 | 73,5 | 48,5 | 573 970 | 4,42 M |
+| marka-model medyanı | 13,6 | 17,7 | 11,6 | 214 660 | 4,08 M |
+| ridge_log | 10,4 | 11,8 ± 0,3 | 7,9 | 166 127 | 4,04 M |
+- Süzgeçli karşılaştırma (doğrulama): ridge 11,8 MAPE / 169 954 MAE / 4,08 M RMSE.
+- KONTROL: doğrulama MAPE %11,8 < %20 → durma gerekmiyor (denetim sonrası kesinleşir).
+
+**Kararlar**
+- "Marka-model" = marka+seri+model (veride en özel araç tanımı); arada marka+seri düzeyi eklendi
+  (baseline'ı güçlendirir, kıyası zorlaştırır). Doğrulamada fold başına ~%96 satır en özel düzeyden.
+- Marka-model medyanının gücü büyük ölçüde model bilgisinden geliyor (model adı nesli kodluyor; train'de
+  model içi yıl std'si 1,56, tüm train 8,53). Bu, yaklaşık grup anahtarı yüzünden yeniden ilan
+  sızıntısının **katkısını dışlamaz**.
+
+**Açık sorunlar**
+- RMSE çok büyük (≈4 M TL): 595 M TL gibi uç fiyatlar; süzülmüş doğrulamada ≈0,42 M. Ana metrik MAPE.
+- Ucuz çeyrekte (Q1) hata en yüksek (Ridge %18,3); toplam APE'ye en büyük katkı Q1'den (%38,5, satırların %24,9'u).
+- Ridge alpha ayarlanmadı; Adım 4'te CV ile.
+
+**Denetim 1 düzeltmeleri** (5 bulgunun 5'i kabul edildi; tur öncesi staged ağaç `97f3eb28515b223acbcdabd97c8bc3c22604b081`)
+1. (Orta) Eğitim süzgeci ana sonuçtan çıkarıldı; süzgeçli koşu betikte karşılaştırma olarak duruyor.
+2. (Düşük) "Marka-model medyanının gücü sızıntı değil" ifadesi yumuşatıldı: yıl std kontrolü model bilgisinin
+   yararlı olduğunu gösterir, yeniden ilan sızıntısını dışlamaz.
+3. (Düşük) Train-test ortak grup > 0 ise artık `ValueError` (önceden yalnızca raporlanıyordu).
+4. (Düşük) "MAPE'nin çoğu ucuz çeyrekten" → "en büyük katkı ucuz çeyrekten" (%38,5; çoğunluk değil).
+5. Çıktılar ve `review_diff.patch` yeniden üretildi.

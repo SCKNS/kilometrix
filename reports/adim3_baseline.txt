@@ -1,0 +1,82 @@
+temiz veri: 50459 satır, 48235 grup
+train: 40391 satır / 38588 grup
+test (AÇILMADI, yalnızca boyut): 10068 satır / 9647 grup; train-test ortak grup 0
+test id listesinin SHA-256'sı (Adım 4'te aynı bölme kontrolü): fdb1c155beaf439498115f148f6725a77d47aa2b591b9bf736f7f17c7b943873
+
+=== ANA SONUÇ: eğitim süzgeci YOK (fold-train'in tüm satırlarıyla eğitim) ===
+fold 1: train 32335 satır / 30870 grup, doğrulama 8056 satır / 7718 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 73335.00000000001, 'fiyat_ust': 25833000.00000054, 'km_ust': 933320.0000000215} -> eğitimden -0 satır; doğrulamada sınır dışı (atılmadı) 17 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7744, 'marka+seri': 290, 'marka': 22}
+  ridge_log: doğrulamada eğitimde görülmemiş marka+seri+model 283 satır
+fold 2: train 32315 satır / 30870 grup, doğrulama 8076 satır / 7718 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 22264500.000001136, 'km_ust': 940000.0} -> eğitimden -0 satır; doğrulamada sınır dışı (atılmadı) 28 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7756, 'marka+seri': 294, 'marka': 24, 'genel': 2}
+  ridge_log: doğrulamada eğitimde görülmemiş marka+seri+model 303 satır
+fold 3: train 32322 satır / 30870 grup, doğrulama 8069 satır / 7718 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 23851850.000000015, 'km_ust': 896790.0000000009} -> eğitimden -0 satır; doğrulamada sınır dışı (atılmadı) 30 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7734, 'marka+seri': 308, 'marka': 22, 'genel': 5}
+  ridge_log: doğrulamada eğitimde görülmemiş marka+seri+model 310 satır
+fold 4: train 32292 satır / 30871 grup, doğrulama 8099 satır / 7717 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 25456349.99999984, 'km_ust': 940000.0} -> eğitimden -0 satır; doğrulamada sınır dışı (atılmadı) 22 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7763, 'marka+seri': 309, 'marka': 22, 'genel': 5}
+  ridge_log: doğrulamada eğitimde görülmemiş marka+seri+model 311 satır
+fold 5: train 32300 satır / 30871 grup, doğrulama 8091 satır / 7717 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 23335550.000000514, 'km_ust': 947010.0000000093} -> eğitimden -0 satır; doğrulamada sınır dışı (atılmadı) 29 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7734, 'marka+seri': 332, 'marka': 24, 'genel': 1}
+  ridge_log: doğrulamada eğitimde görülmemiş marka+seri+model 327 satır
+
+CV sonuçları (5 fold ortalaması; yüzdeler %, MAE/RMSE TL; Q1-Q4 = fiyat çeyreğine göre MAPE)
+ana metrik: 'doğrulama' (yalnızca geçerlilik kuralı, hiç satır atılmadı)
+'doğrulama_süzülmüş' = duyarlılık analizi (ampirik sınırlar doğrulamaya uygulanmış)
+                                       MAPE MAPE_std medyan_APE      MAE       RMSE Q1 (ucuz)    Q2    Q3 Q4 (pahalı)
+küme               model                                                                                             
+train              genel_medyan        73.5      0.2       48.5  574,012  4,884,556     183.7  30.3  21.1        59.6
+doğrulama          genel_medyan        73.5      1.2       48.5  573,970  4,415,432     183.7  30.3  21.1        59.6
+doğrulama_süzülmüş genel_medyan        72.2      1.4       48.5  486,690  1,067,575     179.4  30.3  21.1        59.4
+train              marka_model_medyan  13.6      0.1        9.1  138,235  3,005,286      18.1  13.1  12.2        10.9
+doğrulama          marka_model_medyan  17.7      0.2       11.6  214,660  4,079,904      24.1  17.2  15.3        14.3
+doğrulama_süzülmüş marka_model_medyan  17.4      0.3       11.6  146,490    526,016      23.2  17.2  15.3        14.2
+train              ridge_log           10.4      0.1        7.1  138,442  4,218,220      16.2   9.7   7.9         7.7
+doğrulama          ridge_log           11.8      0.3        7.9  166,127  4,036,219      18.3  11.0   8.9         9.1
+doğrulama_süzülmüş ridge_log           11.6      0.2        7.9   95,999    417,126      17.5  11.0   8.9         8.9
+
+fold başına doğrulama MAPE:
+model  genel_medyan  marka_model_medyan  ridge_log
+fold                                              
+1              72.8                17.6       11.4
+2              72.8                17.6       11.8
+3              72.5                17.6       12.1
+4              74.3                18.1       11.9
+5              75.3                17.8       11.9
+
+=== KARŞILAŞTIRMA: ampirik eğitim süzgeciyle (fiyat %0,1/%99,9, km %99,9 dışı eğitimden çıkar) ===
+fold 1: train 32335 satır / 30870 grup, doğrulama 8056 satır / 7718 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 73335.00000000001, 'fiyat_ust': 25833000.00000054, 'km_ust': 933320.0000000215} -> eğitimden -98 satır; doğrulamada sınır dışı (atılmadı) 17 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7742, 'marka+seri': 290, 'marka': 21, 'genel': 3}
+  ridge_log: doğrulamada eğitimde görülmemiş marka+seri+model 285 satır
+fold 2: train 32315 satır / 30870 grup, doğrulama 8076 satır / 7718 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 22264500.000001136, 'km_ust': 940000.0} -> eğitimden -97 satır; doğrulamada sınır dışı (atılmadı) 28 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7751, 'marka+seri': 297, 'marka': 26, 'genel': 2}
+  ridge_log: doğrulamada eğitimde görülmemiş marka+seri+model 308 satır
+fold 3: train 32322 satır / 30870 grup, doğrulama 8069 satır / 7718 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 23851850.000000015, 'km_ust': 896790.0000000009} -> eğitimden -96 satır; doğrulamada sınır dışı (atılmadı) 30 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7730, 'marka+seri': 311, 'marka': 23, 'genel': 5}
+  ridge_log: doğrulamada eğitimde görülmemiş marka+seri+model 314 satır
+fold 4: train 32292 satır / 30871 grup, doğrulama 8099 satır / 7717 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 25456349.99999984, 'km_ust': 940000.0} -> eğitimden -93 satır; doğrulamada sınır dışı (atılmadı) 22 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7760, 'marka+seri': 311, 'marka': 23, 'genel': 5}
+  ridge_log: doğrulamada eğitimde görülmemiş marka+seri+model 314 satır
+fold 5: train 32300 satır / 30871 grup, doğrulama 8091 satır / 7717 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 23335550.000000514, 'km_ust': 947010.0000000093} -> eğitimden -92 satır; doğrulamada sınır dışı (atılmadı) 29 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7728, 'marka+seri': 336, 'marka': 25, 'genel': 2}
+  ridge_log: doğrulamada eğitimde görülmemiş marka+seri+model 333 satır
+
+doğrulama (ana metrik kümesi), süzgeçsiz / süzgeçli:
+                              MAPE MAPE_std medyan_APE      MAE       RMSE
+          model                                                           
+süzgeçsiz genel_medyan        73.5      1.2       48.5  573,970  4,415,432
+          marka_model_medyan  17.7      0.2       11.6  214,660  4,079,904
+          ridge_log           11.8      0.3        7.9  166,127  4,036,219
+süzgeçli  genel_medyan        73.7      1.1       48.5  573,963  4,415,367
+          marka_model_medyan  17.6      0.4       11.6  223,550  4,180,218
+          ridge_log           11.8      0.3        7.9  169,954  4,080,484
