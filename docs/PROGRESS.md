@@ -704,3 +704,27 @@ genel olarak seçilen araca göre mümkün olmayan seçenekler sunulmasın)
 - 50'den az ilanlı gruplarda tek bir hatalı ilan da seçenek ekler (%2 eşiği orada etkisiz).
 - Gerçek bir araçta görülmemiş bir seçenek (ör. sonradan LPG taktırılmış az ilanlı model) seçilemeyebilir.
 - Gerçek tarayıcıda görülmedi.
+
+### Adım 7 düzeltme 6 — önbellek dosya değişince yenileniyor, SHAP önbelleğine sınır
+**Durum:** TAMAMLANDI (denetçiye verilmeden kullanıcı onayıyla commit edildi ve push'landı)
+**Önerilen commit mesajı:** `Adım 7: düzeltme`
+
+**Yapılanlar** (sorun: düzeltme 5 push'landıktan sonra Cloud'da `KeyError: 'secenekler'`. Neden: `get_artifacts`
+(`st.cache_resource`) yalnızca fonksiyonun kodu değişince yenileniyor; Cloud yeni kodu çalıştırırken bellekte eski
+`form_options.json` kaldı. Reboot ile düzeldi; yerelde aynı süreçte eski→yeni json ile birebir üretildi.)
+- `app/streamlit_app.py`: `artifact_stamp()` = models/ altındaki 4 dosyanın (model, model_info, SHAP arka planı,
+  form_options) değişiklik zamanı + boyutu. `get_artifacts(stamp)` ve `cached_explanation(values, stamp)` bu damgayı
+  önbellek anahtarı olarak alıyor: dosya değişince model/seçenekler yeniden okunuyor, eski modelin SHAP sonuçları
+  kullanılmıyor. `get_artifacts`: `max_entries=1`; `cached_explanation`: `max_entries=1000` (kayıt ≈1,8 KB → ≈2 MB;
+  eskiden sınırsızdı).
+
+**Kontroller** (AppTest, aynı süreçte, yükleme/SHAP çağrıları sayıldı)
+- Dosya değişmeden tekrar: yükleme ve SHAP yeniden yapılmadı (önbellek çalışıyor). json yeniden yazılınca: model
+  yeniden yüklendi, SHAP yeniden hesaplandı. Eski json → yeni json aynı süreçte: artık hata yok (eskiden KeyError).
+- Tofaş referansı **151.229 TL**, 14 satırlık açıklama. Yeni paket yok; model, veri, metrik değişmedi.
+
+**Açık sorunlar**
+- `max_entries=1000` silme davranışı ayrıca denenmedi (Streamlit'in kendi özelliği).
+- Cloud'da git pull'un değişen dosyanın değişiklik zamanını güncellediği varsayılıyor (git yeniden yazdığı dosyada
+  günceller); Cloud'da gözle görülmedi.
+- SHAP'ın global rastgele tohumu: eşzamanlı iki kullanıcıda açıklama çarpanları birkaç yüzde oynayabilir (değişmedi).

@@ -27,16 +27,32 @@ REQUIRED_FIELDS = {"marka": "Marka", "seri": "Seri", "model": "Model", "yil": "M
                    "kasa_tipi": "Kasa tipi", "renk": "Renk", "kimden": "Kimden"}
 
 
-@st.cache_resource(show_spinner="Model yükleniyor…")
-def get_artifacts() -> dict:
+# Uygulamanın okuduğu model dosyaları (models/ altında)
+ARTIFACT_FILES = [P.MODEL_PATH, P.INFO_JSON, P.BACKGROUND_PATH, P.OPTIONS_JSON]
+# SHAP önbelleğinde en fazla bu kadar farklı araç tutulur (kayıt ≈1,8 KB → ≈2 MB); dolunca eskiler silinir
+MAX_CACHED_EXPLANATIONS = 1000
+
+
+def artifact_stamp() -> tuple:
+    """Model dosyalarının değişiklik zamanı ve boyutu. Dosyalardan biri değişirse (ör. GitHub'a push
+    sonrası Cloud yeni dosyayı çeker) bu demet de değişir; önbellek anahtarı olarak kullanılır."""
+    return tuple((p.stat().st_mtime_ns, p.stat().st_size) for p in ARTIFACT_FILES)
+
+
+# stamp yalnızca önbellek anahtarıdır: dosyalar değişince model ve form seçenekleri yeniden okunur.
+# Eskiden anahtar yoktu; push sonrası eski form_options.json bellekte kalıp KeyError veriyordu.
+# max_entries=1: yalnızca son sürüm bellekte kalır.
+@st.cache_resource(show_spinner="Model yükleniyor…", max_entries=1)
+def get_artifacts(stamp: tuple) -> dict:
     return P.load_artifacts()
 
 
 # kendi bekleme yazısı kapalı: bekleme göstergesi main() içinde, fiyatın altında gösterilir
-@st.cache_data(show_spinner=False)
-def cached_explanation(values_items: tuple) -> tuple[pd.DataFrame, float]:
+# stamp anahtarda: model değişirse eski modelin açıklamaları kullanılmaz
+@st.cache_data(show_spinner=False, max_entries=MAX_CACHED_EXPLANATIONS)
+def cached_explanation(values_items: tuple, stamp: tuple) -> tuple[pd.DataFrame, float]:
     """Aynı girdi için SHAP yeniden hesaplanmasın (girdi, sözlüğün sıralı demeti)."""
-    art = get_artifacts()
+    art = get_artifacts(stamp)
     row = P.make_input_frame(dict(values_items))
     return P.explain_car(art["model"], art["background"], row)
 
@@ -179,7 +195,8 @@ def main() -> None:
     st.caption("İkinci el araç fiyat tahmini (Türkiye)")
     st.write("Araç bilgilerini girip **Tahmini göster** düğmesine tıklayın; model tahmini ilan "
              "fiyatını ve bu tahmine hangi özelliğin ne kadar etki ettiğini gösterir.")
-    art = get_artifacts()
+    stamp = artifact_stamp()  # her çalıştırmada bir kez; aşağıdaki iki önbellek aynı damgayı kullanır
+    art = get_artifacts(stamp)
     show_sidebar(art["info"])
 
     values = car_inputs(art["options"])
@@ -227,7 +244,7 @@ def main() -> None:
     st.divider()
     st.subheader("Tahmin nasıl oluştu?")
     with st.spinner("Ayrıntılı açıklama hesaplanıyor, birkaç saniye sürebilir…", show_time=True):
-        table, base = cached_explanation(tuple(values.items()))
+        table, base = cached_explanation(tuple(values.items()), stamp)
     pending_note.empty()
     show_explanation(table, base, price)
 
