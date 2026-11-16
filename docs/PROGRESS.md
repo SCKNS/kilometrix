@@ -7,8 +7,8 @@
 - [x] Adım 3: Özellik hazırlama, basit baseline model, hata ölçümü (aşağıdaki "Değerlendirme kuralları"na göre; test açılmaz) — **TAMAMLANDI**
 - [x] KONTROL (Adım 3 sonucu: Ridge CV MAPE %11,8 → eşiğin altında; kullanıcı onayladı): **Doğrulama (CV) MAPE'si** yaklaşık %20'nin üstündeyse dur, durumu anlat, birlikte karar verelim. Test MAPE'si bu kararda kullanılmaz.
 - [x] Adım 4: Model karşılaştırma ve ayar (CV ile); en sonda seçilen nihai model test setinde **bir kez** değerlendirilir — **TAMAMLANDI**
-- [ ] Adım 5: SHAP ve grafikler — **İNCELEME BEKLİYOR**
-- [ ] Adım 6: Streamlit arayüzü
+- [x] Adım 5: SHAP ve grafikler — **TAMAMLANDI**
+- [ ] Adım 6: Streamlit arayüzü — **İNCELEME BEKLİYOR**
 - [ ] Adım 7: README (atıfı DATA.md'den taşı), Streamlit Cloud yayını (yayında Python 3.13 seçilir; o an Cloud'da yoksa sürümler yeniden sabitlenir)
 
 ## Değerlendirme kuralları (Adım 3'ten itibaren geçerli)
@@ -403,7 +403,7 @@ Bu bir ikinci el araç fiyat tahmin projesi (klasik ML, LLM yok). Proje klasör�
 
 **Ne açıklanıyor (yorum sınırı)**
 - Açıklanan: ön işlemeden sonraki 14 sütun → HGB'nin log(fiyat) tahmini. Sütunlar ham alan değil, temsil:
-  yaş = 2020 − yıl, km = log(1+km), sıra kodları, seri/model = hedef kodu ("model" = marka|seri|model kodu).
+  yaş = 2025 − yıl (Adım 6'da "2020" yazım hatası düzeltildi; kod hep 2025 kullandı), km = log(1+km), sıra kodları, seri/model = hedef kodu ("model" = marka|seri|model kodu).
 - **Dönüştürülmüş girdiler üzerinde, `shap.maskers.Independent` ile interventional SHAP**; arka plan train'den
   200 satır, satır başına 10 permütasyon. Ham özellik etkisi, koşullu katkı veya nedensellik değildir.
   Bu not rapor dosyasının ilk satırında ve her grafik başlığında yazıyor.
@@ -447,3 +447,65 @@ SHAP değerleri değişmedi (eski raporla `diff`: yalnızca başlık, özet süt
 - SHAP model davranışını açıklar, nedensellik değil. Marka/seri/model ve yaş/km katkıyı aralarında keyfi
   bölüşebilir. Arayüzde "etkiler çarpılarak birleşir" ve bu sınır yazılmalı.
 - Arka plan train satırlarından; bu satırların hedef kodları kendi fiyatlarını içerir (Adım 4 denetim 1).
+
+### Adım 6 — Streamlit arayüzü
+**Durum:** İNCELEME BEKLİYOR
+**Önerilen commit mesajı:** `Adım 6: Streamlit arayüzü`
+
+**Yapılanlar**
+- `predict.py` (Adım 0'dan beri tek satırlık docstring'di):
+  - `main()`: form seçeneklerini **yalnızca train'den** üretir (bölme `check_same_split` ile Adım 3-4'e karşı
+    doğrulanır) → `models/form_options.json` (398 KB, git'e girer; uygulama veri dosyasını okumaz).
+    İçerik: marka → seri → model ağacı (model başına ilan sayısı, yıl aralığı, medyan yıl ve km), kategori
+    listeleri (en sık önce), sayısal alanların %0,1/%99,9 sınırları, train fiyat Q1 sınırı (365 000 TL),
+    varsayılan araç (train'de en sık marka+seri+model: Tofaş Şahin 1.6). Çalıştırma:
+    `PYTHONPATH=src python -m arac_fiyat.predict`.
+  - `load_artifacts()`: model + model_info + SHAP arka planı + form seçenekleri; sklearn sürümü, arka planın
+    `model_sha256`'sı, özellik sırası ve model adı doğrulanır, uymazsa `ValueError` (Adım 5'ten devredilen madde).
+  - `make_input_frame`, `predict_price`, `error_range`, `explain_car` (Adım 5'le aynı PermutationExplainer, aynı
+    arka plan ve tohum; toplamlılık > 1e-3 log ise hata), `input_warnings`, `tr_number` (Türkçe sayı yazımı).
+- `app/streamlit_app.py`: bağımlı seçim kutuları (marka → seri → model), yıl/km varsayılanı seçilen modelin
+  train medyanı; motor hacmi/gücü ve değişen/boyalı boş bırakılabilir (= "bilinmiyor", 0 değil). Çıktı:
+  tahmini fiyat, medyan APE'den türetilen tipik hata aralığı, uyarılar, SHAP çarpan grafiği + tablo,
+  "nasıl okunmalı" sınırlar bölümü, kenar çubuğunda veri/model/hata bilgisi. Model yeniden eğitilmedi.
+- `explain.py` docstring ve Adım 5 günlüğünde "yaş = 2020 − yıl" yazım hatası "2025" yapıldı (kod hep 2025).
+- Yeni paket yok.
+
+**Kontroller** (AppTest = Streamlit'in tarayıcısız test aracı; betikler repo dışında, komutlar REVIEW.md'de)
+- Varsayılan açılış hatasız (3,8 sn ilk yükleme); tahmin 151 229 TL; taban 653 383 TL × çarpanlar = tahmin
+  (taban = arka plan tahminlerinin geometrik ortalaması; aritmetik ortalama 1 004 546 TL, denetim 1).
+- 6 train satırı (4 dolu, 2 motor hacmi boş) formdan girildi: uygulamanın tahmini 6/6 `model.predict` ile aynı.
+- Uyarılar: yıl 1970 / km 1 500 000 (train %0,1-%99,9 dışı), model yıl aralığı dışı (Şahin 2015), ucuz dilim
+  (< Q1) çıktı. Marka değişince seri/model ilk seçeneğe düşüyor, hata yok.
+- Aynı girdi iki kez açıklanınca birebir aynı; tek açıklama 0,64 sn (uygulamada ~1,1 sn yeniden çalıştırma).
+- Arka plan sha256'sı bozulunca `load_artifacts` duruyor. `streamlit run`: sağlık "ok", ana sayfa HTTP 200.
+
+**Kararlar**
+- Form yalnızca train'de görülen marka+seri+model birleşimlerini sunar → "görülmemiş model" (testte MAPE %22,4)
+  arayüzden girilemez; ama 2 426 / 4 113 modelin train'de 5'ten az ilanı var → "az ilan" uyarısı.
+- Hata aralığı = tahmin/(1+m) … tahmin/(1−m), m = test medyan APE (%6,671); APE tanımıyla tutarlı. Araca özel
+  güven aralığı değil; arayüzde böyle yazıyor. m için test satırlarına yeniden bakılmadı (yalnızca model_info.json).
+- Test parçası `predict.main()`'de yalnızca `check_same_split`'e gider (id SHA-256 + train/test grup kesişimi);
+  test özellikleri ve fiyatları seçenek üretiminde kullanılmaz.
+- Ucuz dilim uyarısı **tahmine** göre (gerçek fiyat bilinmiyor); testteki %17,1 gerçek fiyata göre Q1'di.
+- Tahmin ve açıklama her girdi değişiminde canlı (buton yok); açıklama girdi demetine göre önbellekte.
+
+**Açık sorunlar**
+- Fiyatlar Haziran 2025 TL düzeyinde; enflasyon düzeltmesi yok (arayüzde yazıyor).
+- Kategori listeleri Python sırasıyla sıralı (Ş, Ö gibi harfler Z'den sonra gelir).
+- `models/form_options.json` sıkışık tek satır JSON: diff'te okunmaz, `predict.py` ile yeniden üretilir.
+- Birim testi yok; doğrulama AppTest betikleriyle yapıldı (repo dışı). Streamlit Cloud yayını Adım 7.
+- Model değişirse `predict.MODEL_SHA256` ve `TEST_Q1_MAPE` elle güncellenmeli (uygulama o zamana kadar açılmaz).
+
+**Denetim 1 düzeltmeleri** (4 bulgunun 4'ü kabul edildi; denetçi kritik ML kusuru bulmadı; tur öncesi staged ağaç
+`78acbcc75bc8bacc37fae72f6d09366abc3da51f`)
+1. (Orta) SHAP tabanı "ortalama tahmin" diye anlatılıyordu; aslında exp(ort. log tahmin) = geometrik ortalama
+   (653 383 TL; aritmetik 1 004 546 TL, medyan tahmin 664 807 TL — yeniden hesaplandı). Arayüz metni ve
+   `explain_car` docstring'i düzeltildi; sayılar ve çarpanlar değişmedi.
+2. (Düşük/Orta) `form_options.json` artık `model_sha256` ve `test_split_sha256` taşıyor; `load_artifacts` ikisini
+   denetliyor. `TEST_Q1_MAPE` sabiti `MODEL_SHA256` sabitine bağlandı: model dosyası değişirse uygulama durur.
+   JSON yeniden üretildi; parmak izi dışındaki içerik `build_form_options(train)` ile birebir aynı.
+3. (Düşük) "Test satırlarına hiç bakılmadı" → "test yalnızca bölme kontrolünde; özellik/fiyatları seçeneklere girmedi"
+   (REVIEW, JSON `kaynak` alanı).
+4. (Düşük) Ucuz dilim uyarısı tahmine, %17,1 gerçek fiyata göre: zaten şüphelerde yazılıydı; uyarı metnine
+   "yaklaşık bir göstergedir" eklendi. Eşdeğer bir oran için testi yeniden açmak gerekirdi, yapılmadı.

@@ -5,7 +5,7 @@ SHAP'ın ağaç dönüştürücüsü bunları okumuyor; hata vermeden yanlış s
 (main() bunu ölçüp rapora yazar). Bu yüzden modelden bağımsız PermutationExplainer kullanılır.
 
 Ne açıklanır: ön işlemeden ÇIKAN 14 sütun -> HGB'nin log(fiyat) tahmini. Ön işleme açıklamanın
-dışındadır. Sütunlar ham ilan alanlarının kendisi değil, temsilleridir: "yaş" = 2020 - yıl,
+dışındadır. Sütunlar ham ilan alanlarının kendisi değil, temsilleridir: "yaş" = 2025 - yıl,
 "kilometre" = log(1 + km), marka/vites/... = sıra kodu, "seri" ve "model" = train fiyatlarından
 öğrenilmiş hedef kodu ("model" sütunu marka|seri|model birleşik kategorisinin kodudur).
 SHAP değerleri log birimindedir; exp(değer) çarpandır:
