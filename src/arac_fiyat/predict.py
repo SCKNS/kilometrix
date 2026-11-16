@@ -42,6 +42,14 @@ NUM_LABELS = {"yil": "yıl", "kilometre": "kilometre", "motor_hacmi": "motor hac
 # "Nadir değer" uyarısı: train'in %0,1 - %99,9 aralığı dışı (Adım 3 ampirik sınırlarıyla aynı yüzdelikler)
 RARE_LOW_Q, RARE_HIGH_Q = 0.001, 0.999
 FEW_MODEL_ROWS = 5  # bu sayıdan az train ilanı olan marka+seri+model için uyarı
+# Araca bağlı alanlar: formda yalnızca seçilen araçta görülen değerler sunulur.
+# Renk ve kimden araca bağlı değil (her model her renkte olabilir); bunlar süzülmez.
+CAR_CATS = ["yakit_tipi", "vites_tipi", "kasa_tipi"]
+# Seçenekleri modelden almak için gereken en az ilan; azsa seriye, o da azsa tüm değerlere bakılır
+MIN_CHOICE_ROWS = 5
+# Bir değerin seçenek sayılması için gruptaki en az payı (daha azı hatalı ilan sayılır).
+# Train içi %80/%20 denemesinde %2, gerçek ilanların en fazla ≈%1'ini engelledi (bkz. docs/REVIEW.md)
+MIN_CHOICE_SHARE = 0.02
 # Aşağıdaki sabit yalnızca bu model dosyası (sha256) için geçerlidir; model değişirse
 # load_artifacts durur, sabit reports/adim4_test.txt'in yenisinden elle güncellenmelidir.
 MODEL_SHA256 = "bf9e4f499da9d9d190b5a185d623307e3327eaec9d6879c13943d2b2dedb0a79"
@@ -55,14 +63,59 @@ def tr_number(value: float, decimals: int = 0) -> str:
     return text.replace(",", "_").replace(".", ",").replace("_", ".")
 
 
+def category_lists(train: pd.DataFrame) -> dict:
+    """Her kategorik alanın train'deki değerleri, en sık olan başta (boşlar hariç)."""
+    return {col: train[col].value_counts().index.tolist() for col in SIMPLE_CATS}
+
+
+def seen_values(cars: pd.DataFrame, keys: list, col: str, order: list) -> dict:
+    """keys grubu -> (ilan sayısı, grupta görülen değerler); değerler `order` sırasında, boşlar hariç.
+
+    Grubun dolu ilanlarının MIN_CHOICE_SHARE'inden azında görülen değer sayılmaz (hatalı ilan gürültüsü,
+    ör. Tofaş Şahin 1.6'da tek "Cabrio" ilanı). %2 ile bu kural yalnızca 50'den fazla dolu ilanı olan gruplarda bir şey eler.
+    """
+    out = {}
+    for key, values in cars.groupby(keys)[col]:
+        share = values.dropna().value_counts(normalize=True)
+        seen = set(share[share >= MIN_CHOICE_SHARE].index)
+        out[key] = (len(values), [v for v in order if v in seen])
+    return out
+
+
+def car_choices(cars: pd.DataFrame, categories: dict) -> dict:
+    """(marka, seri, model) -> {alan: formda sunulacak değerler} (yalnızca CAR_CATS alanları).
+
+    Modelin en az MIN_CHOICE_ROWS ilanı varsa o modelde görülen değerler; yoksa serisinde görülenler;
+    seri de bu kadar ilana sahip değilse tüm değerler. Az ilanlı modelde yalnızca görülen değerleri
+    sunmak, var olan seçenekleri de saklardı (ör. 1 ilanlı model tek yakıt tipine kilitlenirdi).
+    """
+    choices: dict = {}
+    for col in CAR_CATS:
+        by_model = seen_values(cars, ["marka", "seri", "model"], col, categories[col])
+        by_seri = seen_values(cars, ["marka", "seri"], col, categories[col])
+        for (marka, seri, model), (n_model, model_values) in by_model.items():
+            n_seri, seri_values = by_seri[(marka, seri)]
+            if n_model >= MIN_CHOICE_ROWS and model_values:
+                chosen = model_values
+            elif n_seri >= MIN_CHOICE_ROWS and seri_values:
+                chosen = seri_values
+            else:
+                chosen = categories[col]
+            choices.setdefault((marka, seri, model), {})[col] = chosen
+    return choices
+
+
 def car_tree(train: pd.DataFrame) -> dict:
-    """marka -> seri -> model -> {ilan sayısı, yıl aralığı, medyan yıl ve km} (train'den).
+    """marka -> seri -> model -> {ilan sayısı, yıl aralığı, medyan yıl ve km, seçenekler} (train'den).
 
     Boş seri/model "bilinmiyor" olur (add_features gibi). Medyanlar formun varsayılanıdır
     (ör. Tofaş Şahin için 2012 gibi var olmayan bir yıl gösterilmesin); yıl aralığı uyarı içindir.
+    "secenekler": yakıt/vites/kasa alanlarında bu araç için sunulacak değerler (car_choices).
     """
     cars = train[["marka", "seri", "model"]].astype(object).fillna(MISSING_LABEL)
     cars[["yil", "kilometre"]] = train[["yil", "kilometre"]].astype(float)
+    cars[CAR_CATS] = train[CAR_CATS]
+    choices = car_choices(cars, category_lists(train))
     stats = cars.groupby(["marka", "seri", "model"]).agg(
         ilan=("yil", "size"), yil_min=("yil", "min"), yil_max=("yil", "max"),
         yil_medyan=("yil", "median"), km_medyan=("kilometre", "median"))
@@ -70,7 +123,8 @@ def car_tree(train: pd.DataFrame) -> dict:
     for (marka, seri, model), s in stats.iterrows():
         tree.setdefault(marka, {}).setdefault(seri, {})[model] = {
             "ilan": int(s["ilan"]), "yil_min": int(s["yil_min"]), "yil_max": int(s["yil_max"]),
-            "yil_medyan": int(round(s["yil_medyan"])), "km_medyan": int(round(s["km_medyan"], -3))}
+            "yil_medyan": int(round(s["yil_medyan"])), "km_medyan": int(round(s["km_medyan"], -3)),
+            "secenekler": choices[(marka, seri, model)]}
     return tree
 
 
@@ -94,7 +148,7 @@ def build_form_options(train: pd.DataFrame) -> dict:
         "default_car": list(train[["marka", "seri", "model"]].astype(object).fillna(MISSING_LABEL)
                             .value_counts().index[0]),
         # en sık değer başta: formun varsayılanı olur
-        "categories": {col: train[col].value_counts().index.tolist() for col in SIMPLE_CATS},
+        "categories": category_lists(train),
         "numeric": numeric_ranges(train),
         "price_q1": float(price_bin_edges(train[TARGET])[0]),
     }
@@ -229,6 +283,11 @@ def main() -> None:
           f" train {len(train)} satır")
     print(f"marka {len(cars)}, marka+seri {n_seri}, marka+seri+model {n_model}")
     print("kategoriler:", {c: len(v) for c, v in options["categories"].items()})
+    # araca bağlı alanlarda model başına kaç seçenek kaldı (sayı -> model adedi)
+    all_models = [m for s in cars.values() for ms in s.values() for m in ms.values()]
+    for col in CAR_CATS:
+        counts = pd.Series([len(m["secenekler"][col]) for m in all_models]).value_counts().sort_index()
+        print(f"  {col} seçenek sayısı -> model adedi: {counts.to_dict()}")
     print("fiyat Q1 sınırı (train):", f"{options['price_q1']:,.0f} TL")
     for col, r in options["numeric"].items():
         print(f"  {col}: " + ", ".join(f"{k} {v:,.0f}" for k, v in r.items()))

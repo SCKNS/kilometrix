@@ -673,3 +673,34 @@ yerelde üretilemedi, büyük olasılıkla Cloud tarafında: uyku/soğuk başlan
 - SHAP hata verirse bilgi notu ("hesaplanıyor") hata mesajıyla birlikte ekranda kalıyor.
 - Cloud'daki yavaşlığın asıl nedeni ölçülmedi (Cloud logları görülmedi); bu değişiklik yalnızca bekleyişi
   kullanıcı için kolaylaştırır, SHAP süresini kısaltmaz.
+
+### Adım 7 düzeltme 5 — yakıt/vites/kasa seçenekleri seçilen araca göre
+**Durum:** TAMAMLANDI (denetçiye verilmeden kullanıcı onayıyla commit edildi ve push'landı)
+**Önerilen commit mesajı:** `Adım 7: düzeltme`
+
+**Yapılanlar** (kullanıcı isteği: elektrikli sürümü olmayan bir araç seçilince yakıtta "Elektrik" hâlâ çıkıyordu;
+genel olarak seçilen araca göre mümkün olmayan seçenekler sunulmasın)
+- `src/arac_fiyat/predict.py`: `car_tree` her modele `"secenekler"` ekliyor (yakıt, vites, kasa; `CAR_CATS`).
+  Kural (`car_choices`, `seen_values`): modelin ≥5 train ilanı varsa modelde görülen değerler; yoksa serinin
+  (≥5 ilan), o da yoksa tüm değerler. Gruptaki dolu ilanların %2'sinden azında görülen değer sayılmaz
+  (`MIN_CHOICE_SHARE`; hatalı ilan gürültüsü, ör. Tofaş Şahin 1.6'da "Cabrio"/"Dizel"). Renk ve kimden süzülmez
+  (araca bağlı değil). `category_lists` yardımcı fonksiyonu eklendi (davranış aynı).
+- `models/form_options.json` yeniden üretildi (398 KB → 936 KB); `secenekler` dışındaki her şey eskisiyle aynı.
+- `app/streamlit_app.py`: yakıt/vites/kasa model seçilene kadar kapalı ("Önce model seçin"), sonra yalnızca
+  `secenekler` sunuluyor. `pick()`: tek seçenek varsa o seçenek hazır seçili geliyor (marka/seri/model dahil).
+
+**Kontroller**
+- Train içi %80/%20 denemesi (test kullanılmadı): ayrılan %20'de gerçek değeri sunulan seçeneklerde olmayan ilan:
+  yakıt %0,49, vites %0,67, kasa %0,96 (eşik %0: %0,35 / %0,60 / %0,67; %5: %0,94 / %1,12 / %1,61).
+- AppTest: açılışta üç alan kapalı, hata yok. Audi A4 Allroad Quattro 2.0 TDI → yakıt Benzin, LPG & Benzin, Dizel
+  (Elektrik yok). Tofaş Şahin 1.6 → vites "Düz", kasa "Sedan" hazır seçili; ilk seçeneklerle **151.229 TL**
+  (öncekiyle aynı), 14 satırlık açıklama. BMW i Serisi: Elektrik seçiliyken Elektrik'i olmayan modele geçince
+  yakıt "Benzin"e döndü, hata yok. Eksik alan uyarısı çalışıyor.
+- Model, veri, metrik değişmedi; yeni paket yok.
+
+**Açık sorunlar**
+- Veri etiket hataları süzülemez: ör. BMW i5/i7 (elektrikli) ilanlarında yakıt "Benzin"; Audi A4 Allroad 2.0 TDI
+  (dizel) az ilanlı olduğu için seri seçenekleri (Benzin dahil) sunuluyor.
+- 50'den az ilanlı gruplarda tek bir hatalı ilan da seçenek ekler (%2 eşiği orada etkisiz).
+- Gerçek bir araçta görülmemiş bir seçenek (ör. sonradan LPG taktırılmış az ilanlı model) seçilemeyebilir.
+- Gerçek tarayıcıda görülmedi.

@@ -42,9 +42,12 @@ def cached_explanation(values_items: tuple) -> tuple[pd.DataFrame, float]:
 
 
 def pick(column, label: str, choices: list, empty_text: str = "Seçin"):
-    """Boş başlayan seçim kutusu (yer tutucu yazısıyla); seçenek yoksa kapalı durur."""
-    return column.selectbox(label, choices, index=None, placeholder=empty_text,
-                            disabled=not choices)
+    """Boş başlayan seçim kutusu (yer tutucu yazısıyla); seçenek yoksa kapalı durur.
+
+    Tek seçenek varsa (ör. modelde yalnızca "Düz" vites görülmüş) o seçenek hazır seçili gelir.
+    """
+    return column.selectbox(label, choices, index=0 if len(choices) == 1 else None,
+                            placeholder=empty_text, disabled=not choices)
 
 
 def car_inputs(options: dict) -> dict:
@@ -71,11 +74,16 @@ def car_inputs(options: dict) -> dict:
                                     placeholder=year_hint)
     values["kilometre"] = c2.number_input("Kilometre", min_value=0, max_value=MAX_KM,
                                           value=None, step=1000, placeholder=km_hint)
-    values["yakit_tipi"] = pick(c3, "Yakıt", cats["yakit_tipi"])
+    # yakıt, vites ve kasa araca bağlı: model seçilene kadar kapalı, sonra yalnızca o araç için
+    # mümkün görünen değerler sunulur (form_options.json "secenekler", predict.car_choices).
+    # Renk ve kimden araca bağlı değil: tüm değerler sunulur.
+    allowed = car["secenekler"] if car else {}
+    car_text = "Seçin" if car else "Önce model seçin"
+    values["yakit_tipi"] = pick(c3, "Yakıt", allowed.get("yakit_tipi", []), car_text)
 
     c1, c2, c3 = st.columns(3)
-    values["vites_tipi"] = pick(c1, "Vites", cats["vites_tipi"])
-    values["kasa_tipi"] = pick(c2, "Kasa tipi", cats["kasa_tipi"])
+    values["vites_tipi"] = pick(c1, "Vites", allowed.get("vites_tipi", []), car_text)
+    values["kasa_tipi"] = pick(c2, "Kasa tipi", allowed.get("kasa_tipi", []), car_text)
     values["renk"] = pick(c3, "Renk", cats["renk"])
 
     st.subheader("Ayrıntılar (bilmiyorsanız boş bırakın)")
