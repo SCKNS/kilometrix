@@ -1,0 +1,97 @@
+YÖNTEM: interventional SHAP (Independent maskeleyici, train'den 200 satır arka plan), ön işleme sonrası 14 dönüştürülmüş girdi üzerinde; ham özellik etkisi değil
+TEST SETİ: açıklanan satırlar test özelliklerinden (fiyatsız); test seti artık tamamen dokunulmamış holdout değil (Adım 4 metrikleri geçerli, sonraki değişiklikleri tarafsız ölçemez)
+model: hgb_l31_n1500 (model_info.json; dosya sha256 bf9e4f499da9…); arka plan: train'den 200 satır; açıklanan: testten 1000 satır (yalnızca özellikler, fiyat kullanılmadı)
+TreeExplainer kontrolü: 10916/45000 bölme kategorik; SHAP'ın iç tahmini modelden en fazla 2.66 log birimi sapıyor -> kullanılmadı
+PermutationExplainer: 10 permütasyon/satır, 676 sn (0.68 sn/satır)
+toplamlılık: |taban + toplam SHAP - model log tahmini| en fazla 9.2e-05
+taban (arka plan ortalama log tahmini): 13.3899 -> 653,383 TL
+exp(HGB log tahmini) = kayıtlı modelin TL tahmini: True
+
+Kararlılık (ilk 100 satır, başka tohum):
+  genel: ortalama |fark| / ortalama |SHAP| = 0.047
+  tek hücre |fark| (log): medyan 0.0014, %95'lik 0.0103, en fazla 0.0799
+  önem sırası: iki tohumda aynı mı = False; sıra korelasyonu 0.996
+  özellik bazında:
+               ort_abs_shap  ort_abs_fark  goreli_fark
+yaş                  0.2281        0.0059       0.0259
+model                0.1703        0.0064       0.0374
+kilometre            0.1096        0.0039       0.0356
+marka                0.0790        0.0034       0.0429
+seri                 0.0666        0.0045       0.0675
+vites                0.0485        0.0027       0.0563
+motor gücü           0.0479        0.0029       0.0596
+motor hacmi          0.0291        0.0029       0.0994
+boyalı parça         0.0231        0.0016       0.0697
+değişen parça        0.0183        0.0009       0.0501
+yakıt                0.0113        0.0009       0.0810
+kasa                 0.0107        0.0010       0.0967
+renk                 0.0078        0.0022       0.2794
+kimden               0.0012        0.0005       0.4398
+
+Genel önem (bağımsız maskeleme; ortalama |SHAP| log birimi; geo_abs_carpan = exp(ort|SHAP|), geometrik ortalama mutlak çarpan):
+               ort_abs_shap  geo_abs_carpan
+yaş                  0.2212          1.2476
+model                0.1690          1.1841
+kilometre            0.1081          1.1141
+marka                0.0784          1.0815
+seri                 0.0684          1.0708
+vites                0.0481          1.0493
+motor gücü           0.0439          1.0448
+motor hacmi          0.0260          1.0263
+boyalı parça         0.0203          1.0205
+değişen parça        0.0172          1.0174
+kasa                 0.0117          1.0118
+yakıt                0.0112          1.0113
+renk                 0.0083          1.0083
+kimden               0.0014          1.0014
+  araç tanımı (marka+seri+model): toplam ortalama |SHAP| içindeki payı %37.9
+  kullanım (yaş+kilometre): toplam ortalama |SHAP| içindeki payı %39.5
+
+Grup maskeleme kontrolü (ilk 200 satır, 10 permütasyon; log birimi):
+  A = tek tek maskeleme, grup üyeleri sonradan toplanmış; B = grup birlikte maskelenmiş
+  pay = oyuncunun ort|değer|'i / tüm oyuncuların toplamı (A ve B aynı tanımla)
+  grup | ort|A| | ort|B| | A-B satır korelasyonu | pay A | pay B | pay (rapordaki tanım: üyelerin ort|SHAP| toplamı)
+  araç tanımı (marka+seri+model) | 0.2725 | 0.2735 | 0.998 | %37.3 | %37.4 | %37.4
+  kullanım (yaş+kilometre) | 0.2686 | 0.2690 | 0.998 | %36.7 | %36.8 | %38.9
+  (süre 43 sn)
+
+Yön kontrolü (sayısal özellik değeri ile SHAP arasındaki Spearman korelasyonu; boşlar hariç):
+yaş             -0.987
+kilometre       -0.991
+motor hacmi      0.907
+motor gücü       0.964
+değişen parça   -0.831
+boyalı parça    -0.873
+
+yakıt: kategori başına (en az 20 satır); geo_carpan = exp(ort SHAP), geometrik ortalama çarpan
+              satir  ort_shap  geo_carpan
+yakit_tipi                               
+LPG & Benzin    267    -0.017       0.983
+Benzin          507    -0.000       1.000
+Dizel           215     0.021       1.021
+
+vites: kategori başına (en az 20 satır); geo_carpan = exp(ort SHAP), geometrik ortalama çarpan
+               satir  ort_shap  geo_carpan
+vites_tipi                                
+Düz              571    -0.044       0.957
+Yarı Otomatik     66     0.047       1.048
+Otomatik         363     0.055       1.056
+
+kasa: kategori başına (en az 20 satır); geo_carpan = exp(ort SHAP), geometrik ortalama çarpan
+               satir  ort_shap  geo_carpan
+kasa_tipi                                 
+Hatchback/3       22    -0.025       0.976
+Hatchback/5      393    -0.015       0.985
+Sedan            517     0.004       1.004
+Station wagon     28     0.011       1.011
+
+kimden: kategori başına (en az 20 satır); geo_carpan = exp(ort SHAP), geometrik ortalama çarpan
+            satir  ort_shap  geo_carpan
+kimden                                 
+Galeriden     466    -0.001       0.999
+Sahibinden    523     0.000       1.000
+
+örnek ilan (waterfall): id 21894; Kia Rio 1.25 CVVT Fancy, 2014, 129,000 km -> tahmin 581,086 TL
+
+grafikler: shap_bagimlilik.png, shap_beeswarm.png, shap_kategoriler.png, shap_onem.png, shap_ornek_ilan.png
+arka plan kaydedildi: models\shap_background.joblib (23 KB; anahtarlar: model, model_sha256, features, versions, background)

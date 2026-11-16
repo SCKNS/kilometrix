@@ -7,7 +7,7 @@
 - [x] Adım 3: Özellik hazırlama, basit baseline model, hata ölçümü (aşağıdaki "Değerlendirme kuralları"na göre; test açılmaz) — **TAMAMLANDI**
 - [x] KONTROL (Adım 3 sonucu: Ridge CV MAPE %11,8 → eşiğin altında; kullanıcı onayladı): **Doğrulama (CV) MAPE'si** yaklaşık %20'nin üstündeyse dur, durumu anlat, birlikte karar verelim. Test MAPE'si bu kararda kullanılmaz.
 - [x] Adım 4: Model karşılaştırma ve ayar (CV ile); en sonda seçilen nihai model test setinde **bir kez** değerlendirilir — **TAMAMLANDI**
-- [ ] Adım 5: SHAP ve grafikler
+- [ ] Adım 5: SHAP ve grafikler — **İNCELEME BEKLİYOR**
 - [ ] Adım 6: Streamlit arayüzü
 - [ ] Adım 7: README (atıfı DATA.md'den taşı), Streamlit Cloud yayını (yayında Python 3.13 seçilir; o an Cloud'da yoksa sürümler yeniden sabitlenir)
 
@@ -18,6 +18,10 @@
 - Test seti Adım 4'ün sonunda, seçilmiş ve donmuş nihai model ile iki baseline için **bir kez** açılır.
 - Test sonucu görüldükten sonra model değiştirilirse bu açıkça yazılır ve o test sonucu artık
   "tarafsız final değerlendirme" olarak sunulmaz.
+- **Adım 5'ten sonra test seti "dokunulmamış" değildir:** SHAP açıklamaları test satırlarının özellikleriyle
+  (fiyatsız) üretildi. Adım 4 test metrikleri o anda hesaplandığı için geçerli kalır; fakat bundan sonra
+  "test yalnızca bir kez açıldı / hiç dokunulmadı" denmez. Adım 5 SHAP sonuçlarına dayanarak model veya
+  özellik değiştirilirse, bu test seti o değişikliği tarafsız ölçemez (yeni değerlendirme gerekir).
 
 **Metrikler** — TL cinsinden fiyat üzerinden (log hedef kullanılırsa geri dönüştürülerek):
 - **MAPE** (ortalama mutlak yüzde hata): ana metrik, %20 eşiği buna uygulanır.
@@ -379,3 +383,67 @@ Bu bir ikinci el araç fiyat tahmin projesi (klasik ML, LLM yok). Proje klasör�
 3. (Düşük) Tek test açılışı kanıtlanamıyor: iddia yumuşatıldı; `final.py` rapor dosyasını test açılmadan önce
    yazıyor (çökmeye dayanıklı koruma). Koşudan sonra değişti, final yeniden çalıştırılmadı.
 4. (Düşük) Ridge farkı 1,1-1,4 puan; yeniden yükleme kontrolü "ilk 200 test satırı" olarak düzeltildi.
+
+### Adım 5 — SHAP ve grafikler
+**Durum:** TAMAMLANDI (denetim 1 ve 2 düzeltmelerinden sonra kullanıcı onayıyla commit edildi)
+**Commit mesajı:** `Adım 5: SHAP açıklamaları ve grafikler`
+
+**Yapılanlar**
+- `explain.py` (Adım 0'da tek satırlık docstring'di): kayıtlı modeli açıklar. Çalıştırma:
+  `PYTHONPATH=src python -m arac_fiyat.explain` (~12 dk). Model **değişmedi**, yeniden eğitilmedi.
+- Çıktılar: `reports/adim5_shap.txt`, `reports/figures/shap_{onem,beeswarm,bagimlilik,kategoriler,ornek_ilan}.png`,
+  `models/shap_background.joblib` (23 KB; arka plan + model sha256 + özellik sırası + sürümler).
+- Yeni paket yok (`shap`, `matplotlib` zaten requirements.txt'te).
+
+**TreeExplainer kullanılamadı (Adım 4'ten devredilen risk doğrulandı)**
+- HGB'nin 45 000 bölmesinin 10 916'sı kategorik (bit kümesi). SHAP bu modeli **hata vermeden** yükledi ama iç
+  tahmini modelden 2,66 log birimine kadar sapıyor. Toplamlılık tutmadığı için sonuçlar yanlış olurdu.
+- Modeli kategoriksiz yeniden eğitmek, açılmış test sonucunu geçersiz kılardı. Bunun yerine modelden bağımsız
+  **PermutationExplainer** kullanıldı.
+
+**Ne açıklanıyor (yorum sınırı)**
+- Açıklanan: ön işlemeden sonraki 14 sütun → HGB'nin log(fiyat) tahmini. Sütunlar ham alan değil, temsil:
+  yaş = 2020 − yıl, km = log(1+km), sıra kodları, seri/model = hedef kodu ("model" = marka|seri|model kodu).
+- **Dönüştürülmüş girdiler üzerinde, `shap.maskers.Independent` ile interventional SHAP**; arka plan train'den
+  200 satır, satır başına 10 permütasyon. Ham özellik etkisi, koşullu katkı veya nedensellik değildir.
+  Bu not rapor dosyasının ilk satırında ve her grafik başlığında yazıyor.
+- Özetler **geometrik ortalama çarpan**: kategori `geo_carpan` = exp(ort SHAP), önem `geo_abs_carpan` =
+  exp(ort|SHAP|). Yüzdelerin aritmetik ortalaması kullanılmıyor.
+- Açıklanan satırlar: testten 1000 satırın **yalnızca özellikleri**. Bu yüzden test artık tamamen
+  "dokunulmamış" sayılmaz (değerlendirme kurallarına madde; rapor dosyasının ikinci satırı).
+
+**Kontroller**
+- Toplamlılık ≤ 9,2e-05 log; exp(HGB log tahmini) = kayıtlı modelin TL tahmini.
+- Kararlılık (100 satır, ikinci tohum): genel göreli fark 0,047; özellik bazında 0,026 (yaş) – 0,44 (kimden);
+  önem sırasında bir komşu yer değişimi (Spearman 0,996); tek hücre farkı %95'lik 0,010, en fazla 0,08 log.
+- Grup maskeleme (marka+seri+model ve yaş+km birlikte, 200 satır): paylar sonradan toplamayla aynı
+  (%37,3 → %37,4; %36,7 → %36,8), satır korelasyonu 0,998.
+- Yön: değer–SHAP Spearman: yaş −0,99, km −0,99, motor gücü +0,96, motor hacmi +0,91, değişen −0,83, boyalı −0,87.
+
+**Sonuçlar** (ortalama |SHAP|, log birimi): yaş 0,221 · model 0,169 · km 0,108 · marka 0,078 · seri 0,068 ·
+vites 0,048 · motor gücü 0,044 · … · kimden 0,001 (geometrik ort. mutlak çarpan: yaş 1,25 · model 1,18 ·
+km 1,11). Araç tanımı (marka+seri+model) payı %37,9, yaş+km %39,5.
+Vites geometrik ortalama çarpanı: otomatik 1,056, düz 0,957; kimden ≈ 1,000.
+
+**Denetim 1 düzeltmeleri** (7 bulgunun 7'si kabul edildi; ayrıntı `docs/REVIEW.md`)
+1. (Orta) Bağımsız maskeleme → `group_shap` kontrolü eklendi, paylar değişmedi; sonuçlar interventional diye sınırlandı.
+2. (Orta) "Ham özellik" iddiası fazla güçlüydü → kaldırıldı, temsil/hedef kodu açıkça yazıldı.
+3. (Orta) Test artık dokunulmamış değil → değerlendirme kurallarına madde.
+4. (Düşük) exp(ort. SHAP)−1 aritmetik ortalama değil → `etki_%` = ort(exp(SHAP)−1), önemde ort(|exp(SHAP)−1|).
+5. (Düşük) Kararlılık sınırlı → 100 satır, özellik bazında oynaklık, sıra ve hücre dağılımı raporlanıyor.
+6. (Düşük) Arka plan dosyası kendini tanımlamıyor → sha256, özellik sırası, sürümler; ad model_info.json'dan.
+7. (Düşük) Tanı kodu sürüme kırılgan → try/except, hata olursa rapora "YAPILAMADI".
+
+**Denetim 2 düzeltmeleri** (3 bulgunun 3'ü kabul edildi; denetçi kritik sızıntı bulmadı, yorum fazla kesindi)
+1. Interventional SHAP / Independent maskeleyici / dönüştürülmüş girdiler → rapor ilk satırı, grafik başlıkları,
+   REVIEW başı; iddialar bu tanıma bağlandı.
+2. "Ortalama yüzde etki" → geometrik ortalama çarpan (`geo_carpan`, `geo_abs_carpan`); grafikler çarpan ekseninde.
+3. Test tamamen dokunulmamış değil → rapor dosyasının ikinci satırı (kural denetim 1'de eklenmişti).
+SHAP değerleri değişmedi (eski raporla `diff`: yalnızca başlık, özet sütunları ve süreler farklı).
+
+**Açık sorunlar / Adım 6'ya devredilenler**
+- Uygulama arka plan dosyasını yüklerken `model_sha256` ve `features` sırasını doğrulamalı.
+- Tek ilan açıklaması ~0,7 sn; tek hücre ±0,08 log oynayabilir → katkılar "yaklaşık" diye gösterilmeli.
+- SHAP model davranışını açıklar, nedensellik değil. Marka/seri/model ve yaş/km katkıyı aralarında keyfi
+  bölüşebilir. Arayüzde "etkiler çarpılarak birleşir" ve bu sınır yazılmalı.
+- Arka plan train satırlarından; bu satırların hedef kodları kendi fiyatlarını içerir (Adım 4 denetim 1).
