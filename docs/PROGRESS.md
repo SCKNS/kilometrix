@@ -174,7 +174,7 @@ Bu bir ikinci el araç fiyat tahmin projesi (klasik ML, LLM yok). Proje klasör�
   değerlendirme kuralları da göz önünde tutulmalı.
 - `car_price_prediction.csv` adı Gürcistan verisi olan Kaggle "Car Price Prediction Challenge" ile aynı; Türkiye verisi olmayabilir. Adım 1'de kontrol.
 - Git kimliği yalnızca bu repoya (yerel) ayarlandı; global ayar boş.
-- `origin`: private GitHub reposu `arac-fiyat-tahmin`.
+- `origin`: private GitHub reposu `arac-fiyat-tahmin` (Adım 7 sonrası `kilometrix` olarak yeniden adlandırıldı).
 
 ### Adım 1 — Veri setlerinin incelenmesi ve kaynak doğrulama
 **Durum:** TAMAMLANDI (denetim 1 düzeltmelerinden sonra kullanıcı onayıyla commit edildi)
@@ -568,3 +568,37 @@ tanı çıktısıyla ters (çapraz kodlarla %7,45 daha düşük, yani %7,70 iyim
 kodlarıyla %7,70; çapraz kodlarla %7,45; test %10,4 → yaklaşık 3 puanlık eğitim–test (genelleme) farkı" olarak
 yeniden yazıldı; PROGRESS ve REVIEW'daki aynı ifade düzeltildi. Yeniden ilan sızıntısı yüzünden test
 sonuçlarının iyimser olabileceği uyarısı ayrı konu, değişmedi. Kod, model, veri, metrik, requirements değişmedi.
+
+### Adım 7 düzeltme — proje adı: Kilometrix
+**Durum:** TAMAMLANDI (denetçiye verilmeden kullanıcı onayıyla commit edildi ve push'landı)
+**Commit mesajı:** `Adım 7: düzeltme`
+
+**Yapılanlar**
+- GitHub reposu kullanıcı tarafından `arac-fiyat-tahmin` → `kilometrix` olarak yeniden adlandırıldı;
+  yerel `origin` adresi `https://github.com/SCKNS/kilometrix.git` yapıldı (`git ls-remote` ve `git fetch` çalıştı,
+  `main` = `d1cb0a1`).
+- README başlığı: `# Kilometrix — İkinci El Araç Fiyat Tahmini (Türkiye)`.
+- Uygulama: sekme başlığı `Kilometrix — Araç Fiyat Tahmini`, sayfa başlığı `Kilometrix`, altında
+  `İkinci el araç fiyat tahmini (Türkiye)` alt yazısı.
+- Python paket adı `arac_fiyat` **değişmedi**: kayıtlı model dosyası bu ada başvuruyor.
+- Repo public yapılmadan önce izlenen 41 dosya ve 8 commit'in tamamı tarandı: gizli bilgi, kişisel yol, yapay zeka
+  aracı adı yok; geçmişte eklenip silinmiş dosya yok. Commit yazar e-postası public olunca görünür (kullanıcıya
+  bildirildi, karar kullanıcıda).
+
+**Kontroller**
+- AppTest: hata yok, başlık `Kilometrix`, tahmin 151.229 TL (Adım 6-7 ile aynı).
+- Yeni paket yok; model, veri, metrik değişmedi.
+
+**Açık sorunlar**
+- Cloud yayını hâlâ yapılmadı: Streamlit private repoyu göremiyor ("This repository does not exist");
+  kullanıcı repoyu public yapacak ya da Streamlit'e private repo izni verecek.
+
+**Ek (aynı tur): "Tahmini göster" düğmesi** (kullanıcı isteği: alanlar doldurulmadan tahmin başlıyordu)
+- `app/streamlit_app.py` `main()`: tahmin ve SHAP açıklaması artık yalnızca **Tahmini göster** düğmesine basılınca
+  hesaplanıyor. Basılan andaki girdiler `st.session_state["submitted"]`'a yazılıyor; sonra herhangi bir alan
+  değişirse eski sonuç gizlenip "Bilgiler değişti, tekrar tıklayın" notu çıkıyor (yanlış araca ait sonuç görünmesin).
+- `st.form` kullanılmadı: form içinde marka → seri → model kutuları birbirine bağlı güncellenemez.
+- Adım 6 kararındaki "tahmin her girdi değişiminde canlı (buton yok)" maddesi artık geçerli değil.
+- AppTest: açılışta tahmin yok + bilgi notu; marka değişince yine yok; tıklayınca tahmin; km / motor hacmi
+  değişince gizleniyor; tekrar tıklayınca yeni tahmin. Varsayılan araçta tıklama sonrası 151.229 TL, taban
+  653.383 TL (önceki ile aynı), hata yok. Model, veri, metrik, paket değişmedi.

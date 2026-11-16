@@ -152,14 +152,28 @@ def show_sidebar(info: dict) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="İkinci El Araç Fiyat Tahmini", layout="wide")
-    st.title("İkinci El Araç Fiyat Tahmini")
-    st.write("Araç bilgilerini girin; model tahmini ilan fiyatını ve bu tahmine hangi özelliğin "
-             "ne kadar etki ettiğini gösterir.")
+    st.set_page_config(page_title="Kilometrix — Araç Fiyat Tahmini", layout="wide")
+    st.title("Kilometrix")
+    st.caption("İkinci el araç fiyat tahmini (Türkiye)")
+    st.write("Araç bilgilerini girip **Tahmini göster** düğmesine tıklayın; model tahmini ilan "
+             "fiyatını ve bu tahmine hangi özelliğin ne kadar etki ettiğini gösterir.")
     art = get_artifacts()
     show_sidebar(art["info"])
 
     values = car_inputs(art["options"])
+
+    # Tahmin yalnızca düğmeye basılınca yapılır; basılan andaki girdiler saklanır.
+    # Sonra bir alan değişirse eski tahmin gizlenir (yanlış araca ait sonuç görünmesin).
+    if st.button("Tahmini göster", type="primary"):
+        st.session_state["submitted"] = values
+    submitted = st.session_state.get("submitted")
+    if submitted is None:
+        st.info("Bilgileri girdikten sonra **Tahmini göster** düğmesine tıklayın.")
+        return
+    if submitted != values:
+        st.info("Bilgiler değişti. Yeni tahmin için **Tahmini göster** düğmesine tekrar tıklayın.")
+        return
+
     row = P.make_input_frame(values)
     price = P.predict_price(art["model"], row)
     low, high = P.error_range(price, art["info"]["test_metrikleri"]["medyan_APE"])

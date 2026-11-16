@@ -1,4 +1,4 @@
-# İkinci El Araç Fiyat Tahmini (Türkiye)
+# Kilometrix — İkinci El Araç Fiyat Tahmini (Türkiye)
 
 arabam.com'daki Haziran 2025 ilanlarıyla eğitilmiş, klasik makine öğrenmesi tabanlı bir ikinci el
 otomobil **ilan fiyatı** tahmin modeli. Streamlit arayüzünde araç bilgileri girilir; uygulama tahmini
