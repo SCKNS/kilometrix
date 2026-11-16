@@ -8,8 +8,8 @@
 - [x] KONTROL (Adım 3 sonucu: Ridge CV MAPE %11,8 → eşiğin altında; kullanıcı onayladı): **Doğrulama (CV) MAPE'si** yaklaşık %20'nin üstündeyse dur, durumu anlat, birlikte karar verelim. Test MAPE'si bu kararda kullanılmaz.
 - [x] Adım 4: Model karşılaştırma ve ayar (CV ile); en sonda seçilen nihai model test setinde **bir kez** değerlendirilir — **TAMAMLANDI**
 - [x] Adım 5: SHAP ve grafikler — **TAMAMLANDI**
-- [ ] Adım 6: Streamlit arayüzü — **İNCELEME BEKLİYOR**
-- [ ] Adım 7: README (atıfı DATA.md'den taşı), Streamlit Cloud yayını (yayında Python 3.13 seçilir; o an Cloud'da yoksa sürümler yeniden sabitlenir)
+- [x] Adım 6: Streamlit arayüzü — **TAMAMLANDI**
+- [x] Adım 7: README (atıfı DATA.md'den taşı), Streamlit Cloud yayını (yayında Python 3.13 seçilir; o an Cloud'da yoksa sürümler yeniden sabitlenir) — **TAMAMLANDI** (Cloud yayını kullanıcıda)
 
 ## Değerlendirme kuralları (Adım 3'ten itibaren geçerli)
 **Test setinin kullanımı**
@@ -449,8 +449,8 @@ SHAP değerleri değişmedi (eski raporla `diff`: yalnızca başlık, özet süt
 - Arka plan train satırlarından; bu satırların hedef kodları kendi fiyatlarını içerir (Adım 4 denetim 1).
 
 ### Adım 6 — Streamlit arayüzü
-**Durum:** İNCELEME BEKLİYOR
-**Önerilen commit mesajı:** `Adım 6: Streamlit arayüzü`
+**Durum:** TAMAMLANDI (denetim 1 düzeltmelerinden sonra kullanıcı onayıyla commit edildi ve push'landı)
+**Commit mesajı:** `Adım 6: Streamlit tahmin ve SHAP arayüzü`
 
 **Yapılanlar**
 - `predict.py` (Adım 0'dan beri tek satırlık docstring'di):
@@ -509,3 +509,62 @@ SHAP değerleri değişmedi (eski raporla `diff`: yalnızca başlık, özet süt
    (REVIEW, JSON `kaynak` alanı).
 4. (Düşük) Ucuz dilim uyarısı tahmine, %17,1 gerçek fiyata göre: zaten şüphelerde yazılıydı; uyarı metnine
    "yaklaşık bir göstergedir" eklendi. Eşdeğer bir oran için testi yeniden açmak gerekirdi, yapılmadı.
+
+### Adım 7 — README ve Streamlit Cloud hazırlığı
+**Durum:** TAMAMLANDI (denetim 1–3 düzeltmelerinden sonra kullanıcı onayıyla commit edildi ve push'landı)
+**Önerilen commit mesajı:** `Adım 7: README ve yayın hazırlığı`
+
+**Yapılanlar**
+- `README.md` baştan yazıldı: sonuç tablosu (test, iki baseline ile), CV ile seçim, ucuz/görülmemiş araç
+  hataları, "iyimser olabilir" sınırı, SHAP önem grafiği ve okuma sınırları, veri atıfı + lisans çelişkisi,
+  veri sınırları, yöntem özeti, uygulamayı çalıştırma, Cloud ayarı, sonuçları yeniden üretme komutları.
+  Sayılar `reports/adim4_test.txt`, `reports/adim5_shap.txt` ve bu günlükten; yeni hesap yok.
+- Atıf `docs/DATA.md`'den README'ye **taşındı**; DATA.md'de yalnızca yönlendirme kaldı.
+- **xgboost uygulama bağımlılığından çıkarıldı:** `requirements.txt` → `requirements-dev.txt`. Neden: nihai
+  model HGB; xgboost yalnızca `compare.py`'de aday olarak kullanılıyor, ama uygulama onu dolaylı içe aktarıyordu
+  (`predict → final → compare → xgboost`). Linux'ta xgboost 3.4.1 `nvidia-nccl-cu13` paketini de çekiyor
+  (`platform_system == "Linux"`): Cloud kurulumu gereksiz büyürdü. `compare.py`'de import, xgb dalının içine
+  alındı (davranış aynı). Yeni paket yok.
+
+**Kontroller**
+- Linux + Python 3.13 için `requirements.txt` tekerlek uyumluluk kontrolü (`pip install --dry-run --platform
+  manylinux… --only-binary=:all:`, xgboost'suz, Windows'ta koşturuldu): 7 sabit paketin her biri için Python
+  3.13/Linux ile uyumlu ikili (pandas, numpy, scikit-learn, matplotlib cp313; shap abi3) ya da platformdan
+  bağımsız (streamlit, joblib py3-none-any) tekerlek bulundu; 49 paket. pip ortam işaretlerini Windows'a göre
+  değerlendirdiği için grafik ayrıca Linux işaretleriyle yeniden yürüdü (repo dışı betik): Linux'ta gereken
+  48 paketin hepsi çözümde, sürüm kısıtları uyuyor; fazladan olan yalnızca `colorama`. Linux'ta gerçek
+  kurulum yapılmadı.
+- Yalnızca git'e girecek dosyalar (`git checkout-index` ile staged ağaç) repo dışına kopyalandı; **sıfırdan**
+  Python 3.13.14 sanal ortamına yalnızca `requirements.txt` kuruldu (xgboost yok, `pip check` temiz).
+  AppTest: hatasız açılış, tahmin 151.229 TL ve taban 653.383 TL (Adım 6 ile aynı), paket temiz kopyadan
+  yüklendi, xgboost hiç içe aktarılmadı, marka değişimi hatasız. `streamlit run`: sağlık "ok", HTTP 200.
+- Geliştirme ortamında `compare.build_model("xgb", …)` hâlâ `XGBRegressor` kuruyor.
+
+**Açık sorunlar**
+- **Cloud yayını yapılmadı:** Streamlit hesabıyla giriş gerektiriyor, kullanıcı yapacak (adımlar REVIEW.md'de).
+  Linux tarafı yalnızca tekerlek uyumluluğu + meta veri denetimiyle sınandı (gerçek Linux çözümlemesi ve kurulumu yok); gerçek kurulum Windows'ta. Cloud'da Python 3.13
+  seçeneği olup olmadığı görülmedi.
+- Yayın adresi README'ye henüz yazılmadı; yayından sonra eklenecek.
+- Repo private: Cloud'un private repoya erişimi ve uygulamanın kimlere açık olacağı yayın ekranında seçilir.
+- Gerçek tarayıcıda (mobil dahil) görsel düzen hâlâ görülmedi.
+
+**Denetim 1 düzeltmeleri** (2 bulgunun 2'si kabul edildi; denetçi kritik ML kusuru bulmadı; tur öncesi staged ağaç
+`7173727962da9b6ce8ba299dfd1d826f4ff2a8f1`)
+1. (Orta) Linux çözümlemesi kanıtladığından güçlü anlatılıyordu: pip işaretleri Windows'a göre değerlendirdi,
+   xgboost çıkınca yeniden koşturulmadı, "hepsinin cp313 tekerleği var" yanlıştı (shap abi3; streamlit, joblib
+   py3-none-any). Çözümleme xgboost'suz yeniden koşturuldu (49 paket, çıkış 0) ve grafik Linux işaretleriyle
+   ayrıca yürüdü: Linux'ta gereken 48 paketin hepsi çözümde, sürümler uyuyor, fazlası yalnızca `colorama`.
+   PROGRESS, REVIEW iddia 2 ve şüphe 3 buna göre yazıldı. Linux'ta gerçek kurulum hâlâ yok.
+2. (Düşük) README "≈3 puanlık aşırı uyum farkı" → "yaklaşık 3 puanlık eğitim–test (genelleme) farkı"; eğitim
+   MAPE'sinin tam-train kodlarıyla %7,70, çapraz kodlarla %7,45 olduğu (`reports/adim4_te_train_kontrol.txt`)
+   eklendi. Sayılar değişmedi. (İlk yazımdaki "eğitim değeri iyimser" ifadesi Denetim 3'te düzeltildi.)
+
+**Denetim 2:** kod uygun, commit'e engel yok. Kalan tek madde ("Linux bağımlılık çözümlemesi" ifadesi) REVIEW
+ve bu günlükte "tekerlek uyumluluk kontrolü + meta veri denetimi" olarak düzeltildi; diğer maddeler Denetim 1'de
+yapılmıştı. Tur öncesi staged ağaç `95a609600abbfdfe5c6f3f9cbee70259b93728bb`.
+
+**Denetim 3** (1 düşük bulgu, kabul edildi): README'de eğitim MAPE'si %7,70 için "biraz iyimser" deniyordu;
+tanı çıktısıyla ters (çapraz kodlarla %7,45 daha düşük, yani %7,70 iyimser değil). README maddesi "tam-train
+kodlarıyla %7,70; çapraz kodlarla %7,45; test %10,4 → yaklaşık 3 puanlık eğitim–test (genelleme) farkı" olarak
+yeniden yazıldı; PROGRESS ve REVIEW'daki aynı ifade düzeltildi. Yeniden ilan sızıntısı yüzünden test
+sonuçlarının iyimser olabileceği uyarısı ayrı konu, değişmedi. Kod, model, veri, metrik, requirements değişmedi.

@@ -18,7 +18,6 @@ from sklearn.compose import TransformedTargetRegressor
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.linear_model import Ridge
 from sklearn.pipeline import make_pipeline
-from xgboost import XGBRegressor
 
 from arac_fiyat.config import RANDOM_STATE, REPORTS_DIR
 from arac_fiyat.features import (build_preprocessor, build_tree_preprocessor, feature_step,
@@ -51,6 +50,10 @@ def build_model(family: str, params: dict) -> TransformedTargetRegressor:
             early_stopping=False, random_state=RANDOM_STATE, **params)
         pipe = make_pipeline(feature_step(), build_tree_preprocessor(), hgb)
     elif family == "xgb":
+        # xgboost yalnızca model karşılaştırmasında gerekir (requirements-dev.txt); burada içe
+        # aktarılınca uygulama (predict -> final -> compare) xgboost olmadan da açılır
+        from xgboost import XGBRegressor
+
         # one-hot (seyrek) girdi; Ridge ile aynı ön işleme
         xgb = XGBRegressor(learning_rate=LEARNING_RATE, random_state=RANDOM_STATE, **params)
         pipe = make_pipeline(feature_step(), build_preprocessor(), xgb)

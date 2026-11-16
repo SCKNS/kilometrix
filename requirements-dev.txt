@@ -1,2 +1,4 @@
 -r requirements.txt
+# Uygulamada gerekmez; yalnızca Adım 4 model karşılaştırması (arac_fiyat.compare) için
+xgboost==3.4.1
 jupyter==1.1.1

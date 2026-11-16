@@ -77,7 +77,7 @@ değil). Fiyat karşılaştırmaya dahil: kuralı daraltır, fiyat değerine gö
 Aykırı km/fiyat değerlerine dokunulmadı (Adım 3, yalnızca train). `degisen_sayisi`/`boyali_sayisi`
 boşları "bilinmiyor" olarak bırakıldı (0 değil). Ayrıntı: `reports/adim2_temizleme.txt`.
 
-### A'nın sınırları (README'ye taşınacak)
+### A'nın sınırları (özeti README'de, Adım 7)
 - **İlan fiyatıdır**, gerçekleşen satış fiyatı değildir.
 - **Tek dönem** (Haziran 2025): enflasyon nedeniyle tahminler o tarihin TL seviyesindedir.
 - **Satır bazında tarih ve ilan no yok** → zaman bazlı ve kimlik bazlı bölme yapılamaz
@@ -112,11 +112,5 @@ Bilinen sorunlar: `kilometre(Km)` ve `yıl` sütunlarının içeriği yer deği�
 A ile marka+yıl+km+fiyat birebir aynı 123 satır var (olası ortak ilan).
 
 ## Atıf
-Adım 7'de README'ye taşınacak:
-
-> Veri: Mehmet Tanrıverdi, "Used Car Prices Dataset (Turkey - arabam.com)", Kaggle, 2025.
-> https://www.kaggle.com/datasets/mehmettanriverdi/used-car-prices-dataset-turkey-arabam-com
-> Kaggle lisans alanı: CC0 1.0; sayfa alt başlığı: "Non-commercial use". Kaynak site: arabam.com,
-> Haziran 2025 ilanları. Bu proje ticari değildir.
-
-(Lisans çelişkili olduğu için atıf her durumda yazılır ve README'de çelişki de belirtilir.)
+Adım 7'de README'nin "Veri" bölümüne taşındı (lisans çelişkisiyle birlikte). Tek kaynak orası;
+atıf metni değişirse README'de güncellenir.
