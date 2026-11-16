@@ -32,7 +32,7 @@ def get_artifacts() -> dict:
     return P.load_artifacts()
 
 
-# kendi bekleme yazısı kapalı: bekleme göstergesi main() içinde düğmenin altında gösterilir
+# kendi bekleme yazısı kapalı: bekleme göstergesi main() içinde, fiyatın altında gösterilir
 @st.cache_data(show_spinner=False)
 def cached_explanation(values_items: tuple) -> tuple[pd.DataFrame, float]:
     """Aynı girdi için SHAP yeniden hesaplanmasın (girdi, sözlüğün sıralı demeti)."""
@@ -119,7 +119,7 @@ def effect_text(multiplier: float) -> str:
 
 
 def show_explanation(table: pd.DataFrame, base: float, price: float) -> None:
-    st.subheader("Tahmin nasıl oluştu?")
+    # "Tahmin nasıl oluştu?" başlığı main() içinde, bekleme göstergesinden önce yazılır
     st.write(f"Başlangıç noktası **{P.tr_number(base)} TL**: modelin, eğitim verisinden seçilmiş 200 "
              "ilan için tahminlerinin **geometrik ortalaması** (log fiyat tahminlerinin ortalamasının "
              "TL karşılığı). Basit ortalama değildir; basit ortalama pahalı araçlar yüzünden daha "
@@ -194,16 +194,20 @@ def main() -> None:
         st.info("Bilgiler değişti. Yeni tahmin için **Tahmini göster** düğmesine tekrar tıklayın.")
         return
 
-    # Hesap (özellikle SHAP açıklaması) birkaç saniye sürebilir; kullanıcı beklediğini anlasın diye
-    # düğmenin hemen altında süre sayan bir bekleme göstergesi çıkar. Sonuçlar hesap bitince birlikte görünür.
-    with st.spinner("Tahmin hesaplanıyor, birkaç saniye sürebilir…", show_time=True):
-        row = P.make_input_frame(values)
-        price = P.predict_price(art["model"], row)
-        table, base = cached_explanation(tuple(values.items()))
+    # Fiyat tahmini hızlıdır (yerelde ≈0,05 sn): önce fiyat gösterilir.
+    # SHAP açıklaması yavaştır (yerelde ≈0,7 sn, Cloud'da daha uzun olabilir): fiyat ekrandayken
+    # sayfanın altında hesaplanır; bu sırada kullanıcıya ayrıntıların geleceği söylenir.
+    row = P.make_input_frame(values)
+    price = P.predict_price(art["model"], row)
     low, high = P.error_range(price, art["info"]["test_metrikleri"]["medyan_APE"])
 
     st.divider()
     st.metric("Tahmini ilan fiyatı (Haziran 2025)", f"{P.tr_number(price)} TL")
+    # açıklama bitince bu not silinir (st.empty: sonradan boşaltılabilen yer)
+    pending_note = st.empty()
+    pending_note.info("Fiyat hazır, ama işlem henüz bitmedi: bu tahmine hangi özelliğin ne kadar etki "
+                      "ettiğini gösteren **ayrıntılı açıklama** hesaplanıyor. Birkaç saniye içinde "
+                      "sayfanın altında **Tahmin nasıl oluştu?** bölümünde görünecek.")
     st.write(f"Testteki ilanların yaklaşık yarısında hata (gerçek fiyata oranla) "
              f"%{P.tr_number(art['info']['test_metrikleri']['medyan_APE'], 1)} veya daha azdı; kalan yarıda "
              f"daha büyüktü. Bu oran bu tahmine uygulanırsa: **{P.tr_number(low)} – {P.tr_number(high)} TL**. "
@@ -213,6 +217,10 @@ def main() -> None:
         st.warning(note)
 
     st.divider()
+    st.subheader("Tahmin nasıl oluştu?")
+    with st.spinner("Ayrıntılı açıklama hesaplanıyor, birkaç saniye sürebilir…", show_time=True):
+        table, base = cached_explanation(tuple(values.items()))
+    pending_note.empty()
     show_explanation(table, base, price)
 
 

@@ -647,3 +647,29 @@ sonuçlarının iyimser olabileceği uyarısı ayrı konu, değişmedi. Kod, mod
 
 **Açık sorunlar**
 - Bekleme göstergesi AppTest ile görülemez; gerçek tarayıcıda görülmedi.
+
+### Adım 7 düzeltme 4 — fiyat önce, SHAP açıklaması sonra
+**Durum:** TAMAMLANDI (denetçiye verilmeden kullanıcı onayıyla commit edildi ve push'landı)
+**Önerilen commit mesajı:** `Adım 7: düzeltme`
+
+**Yapılanlar** (kullanıcı sorunu: Streamlit Cloud'da bazı tahminler çok uzun sürüyordu; ör. Audi A4 Allroad
+Quattro 2.0, 2015, 149.000 km. Yerelde aynı girdi ≈0,65 sn, 40 rastgele araçta en fazla 0,83 sn; yavaşlık
+yerelde üretilemedi, büyük olasılıkla Cloud tarafında: uyku/soğuk başlangıç veya kısıtlı CPU)
+- `app/streamlit_app.py` / `main()`: fiyat tahmini artık bekleme göstergesinin dışında, hemen hesaplanıp
+  gösteriliyor (fiyat, hata aralığı, uyarılar). Fiyatın hemen altında bir bilgi notu çıkıyor: "Fiyat hazır,
+  ama işlem henüz bitmedi… ayrıntılı açıklama hesaplanıyor… **Tahmin nasıl oluştu?** bölümünde görünecek."
+- "Tahmin nasıl oluştu?" başlığı yazılıyor, altında süre sayan gösterge ("Ayrıntılı açıklama hesaplanıyor…")
+  ile SHAP hesaplanıyor; bitince bilgi notu siliniyor (`st.empty()`), açıklama (grafik + tablo) çiziliyor.
+- `show_explanation`: başlığı artık kendisi yazmıyor (main() bekleme göstergesinden önce yazıyor).
+
+**Kontroller** (AppTest, betik repo dışında)
+- Tofaş Şahin 1.6, 1993, 155.000 km → **151.229 TL** (öncekiyle aynı), 14 satırlık açıklama, bilgi notu
+  sonunda yok, hata yok. Ekrandaki Audi örneği → 1.529.172 TL, 14 satır, hata yok.
+- SHAP bilerek hata verdirildi: fiyat (151.229 TL) ve bilgi notu ekranda kaldı → fiyat SHAP'tan önce çiziliyor.
+- Yeni paket yok; model, veri, metrik değişmedi.
+
+**Açık sorunlar**
+- Gerçek tarayıcıda / Cloud'da fiyatın önce, açıklamanın sonra geldiği gözle görülmedi (AppTest ara durumu göstermez).
+- SHAP hata verirse bilgi notu ("hesaplanıyor") hata mesajıyla birlikte ekranda kalıyor.
+- Cloud'daki yavaşlığın asıl nedeni ölçülmedi (Cloud logları görülmedi); bu değişiklik yalnızca bekleyişi
+  kullanıcı için kolaylaştırır, SHAP süresini kısaltmaz.
