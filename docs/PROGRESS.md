@@ -602,3 +602,28 @@ sonuçlarının iyimser olabileceği uyarısı ayrı konu, değişmedi. Kod, mod
 - AppTest: açılışta tahmin yok + bilgi notu; marka değişince yine yok; tıklayınca tahmin; km / motor hacmi
   değişince gizleniyor; tekrar tıklayınca yeni tahmin. Varsayılan araçta tıklama sonrası 151.229 TL, taban
   653.383 TL (önceki ile aynı), hata yok. Model, veri, metrik, paket değişmedi.
+
+### Adım 7 düzeltme 2 — form alanları boş başlıyor (yer tutucu)
+**Durum:** TAMAMLANDI (denetçiye verilmeden kullanıcı onayıyla commit edildi ve push'landı)
+**Commit mesajı:** `Adım 7: düzeltme`
+
+**Yapılanlar** (kullanıcı isteği: sayfa açılınca alanlar doldurulmuş gibi görünüyordu)
+- `app/streamlit_app.py`: marka/seri/model, yakıt, vites, kasa tipi, renk, kimden seçim kutuları boş başlıyor
+  (`index=None`, yer tutucu "Seçin"); seri marka seçilene, model seri seçilene kadar kapalı ("Önce marka/seri seçin").
+- Model yılı ve kilometre boş başlıyor; yer tutucu seçilen modelin train medyanını örnek gösteriyor
+  (ör. Tofaş Şahin 1.6: "ör. 1993", "ör. 155.000"), model seçilmemişse "ör. 2015", "ör. 150.000".
+- Zorunlu alanlar `REQUIRED_FIELDS`'te; **Tahmini göster**'e eksik alanla basılırsa tahmin yapılmıyor, eksik
+  alanların adları uyarıyla listeleniyor. "Ayrıntılar" bölümü eskisi gibi isteğe bağlı (boş = bilinmiyor).
+- `pick()` artık varsayılan seçmiyor; `form_options.json` içindeki `default_car` uygulamada kullanılmıyor
+  (dosya yeniden üretilmedi, `predict.py` değişmedi).
+
+**Kontroller** (AppTest, betikler repo dışında)
+- Açılışta 8 seçim kutusu ve 6 sayı alanının hepsi boş, hata yok; boş formla düğme → 10 alanlık eksik uyarısı,
+  tahmin yok. Kısmi doldurma → yalnızca kalan 5 alan listelendi.
+- Eski varsayılan araç elle girildi (Tofaş Şahin 1.6, 1993, 155.000 km, ilk seçenekler): tahmin **151.229 TL**
+  (Adım 6-7 ile aynı). Başka girdiyle (1995, 250.000 km) 140.275 TL, hata yok.
+- Marka değişince seri/model boşa dönüyor, eski sonuç gizleniyor, hata yok. Yeni paket yok.
+
+**Açık sorunlar**
+- Model değişince yer tutucu değiştiği için Streamlit yıl/km alanlarını sıfırlıyor (eski sürümde de sıfırlanıyordu).
+- Gerçek tarayıcıda görsel düzen görülmedi.

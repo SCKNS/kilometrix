@@ -21,6 +21,10 @@ from arac_fiyat import predict as P  # noqa: E402
 UP_COLOR, DOWN_COLOR = "#3b6ea5", "#b54a4a"  # Adım 5 grafikleriyle aynı renkler
 # Formda girilebilecek en yüksek km (train'de 90 milyon gibi açıkça hatalı değerler var)
 MAX_KM = 2_000_000
+# Boş bırakılamayan alanlar (anahtar -> ekrandaki ad); "Ayrıntılar" bölümü isteğe bağlı
+REQUIRED_FIELDS = {"marka": "Marka", "seri": "Seri", "model": "Model", "yil": "Model yılı",
+                   "kilometre": "Kilometre", "yakit_tipi": "Yakıt", "vites_tipi": "Vites",
+                   "kasa_tipi": "Kasa tipi", "renk": "Renk", "kimden": "Kimden"}
 
 
 @st.cache_resource(show_spinner="Model yükleniyor…")
@@ -36,10 +40,10 @@ def cached_explanation(values_items: tuple) -> tuple[pd.DataFrame, float]:
     return P.explain_car(art["model"], art["background"], row)
 
 
-def pick(column, label: str, choices: list, default: str):
-    """Seçim kutusu; varsayılan listede yoksa (ör. başka marka seçilince) ilk seçenek."""
-    index = choices.index(default) if default in choices else 0
-    return column.selectbox(label, choices, index=index)
+def pick(column, label: str, choices: list, empty_text: str = "Seçin"):
+    """Boş başlayan seçim kutusu (yer tutucu yazısıyla); seçenek yoksa kapalı durur."""
+    return column.selectbox(label, choices, index=None, placeholder=empty_text,
+                            disabled=not choices)
 
 
 def car_inputs(options: dict) -> dict:
@@ -49,24 +53,29 @@ def car_inputs(options: dict) -> dict:
 
     st.subheader("Araç")
     c1, c2, c3 = st.columns(3)
-    values["marka"] = pick(c1, "Marka", sorted(cars), options["default_car"][0])
-    values["seri"] = pick(c2, "Seri", sorted(cars[values["marka"]]), options["default_car"][1])
-    values["model"] = pick(c3, "Model", sorted(cars[values["marka"]][values["seri"]]),
-                           options["default_car"][2])
+    values["marka"] = pick(c1, "Marka", sorted(cars))
+    series = sorted(cars[values["marka"]]) if values["marka"] else []
+    values["seri"] = pick(c2, "Seri", series, "Seçin" if series else "Önce marka seçin")
+    models = sorted(cars[values["marka"]][values["seri"]]) if values["seri"] else []
+    values["model"] = pick(c3, "Model", models, "Seçin" if models else "Önce seri seçin")
 
-    # varsayılan yıl ve km: seçilen modelin train medyanı (model değişince bu iki alan sıfırlanır)
-    car = cars[values["marka"]][values["seri"]][values["model"]]
+    # yıl ve km boş başlar; model seçiliyse yer tutucu o modelin train medyanını örnek gösterir
+    # (yer tutucu değişince Streamlit alanı sıfırlar: model değişirse yıl/km yeniden girilir)
+    car = cars[values["marka"]][values["seri"]][values["model"]] if values["model"] else None
+    year_hint = f"ör. {car['yil_medyan']}" if car else "ör. 2015"
+    km_hint = f"ör. {P.tr_number(min(car['km_medyan'], MAX_KM))}" if car else "ör. 150.000"
     c1, c2, c3 = st.columns(3)
     values["yil"] = c1.number_input("Model yılı", min_value=int(num["yil"]["min"]),
-                                    max_value=options["data_year"], value=car["yil_medyan"], step=1)
+                                    max_value=options["data_year"], value=None, step=1,
+                                    placeholder=year_hint)
     values["kilometre"] = c2.number_input("Kilometre", min_value=0, max_value=MAX_KM,
-                                          value=min(car["km_medyan"], MAX_KM), step=1000)
-    values["yakit_tipi"] = c3.selectbox("Yakıt", cats["yakit_tipi"])
+                                          value=None, step=1000, placeholder=km_hint)
+    values["yakit_tipi"] = pick(c3, "Yakıt", cats["yakit_tipi"])
 
     c1, c2, c3 = st.columns(3)
-    values["vites_tipi"] = c1.selectbox("Vites", cats["vites_tipi"])
-    values["kasa_tipi"] = c2.selectbox("Kasa tipi", cats["kasa_tipi"])
-    values["renk"] = c3.selectbox("Renk", cats["renk"])
+    values["vites_tipi"] = pick(c1, "Vites", cats["vites_tipi"])
+    values["kasa_tipi"] = pick(c2, "Kasa tipi", cats["kasa_tipi"])
+    values["renk"] = pick(c3, "Renk", cats["renk"])
 
     st.subheader("Ayrıntılar (bilmiyorsanız boş bırakın)")
     st.caption("Boş alan modele \"bilinmiyor\" olarak gider; 0 ile aynı şey değildir. "
@@ -80,8 +89,13 @@ def car_inputs(options: dict) -> dict:
                                                value=None, step=1, placeholder="boş")
     values["boyali_sayisi"] = c4.number_input("Boyalı parça sayısı", min_value=0, max_value=20,
                                               value=None, step=1, placeholder="boş")
-    values["kimden"] = st.selectbox("Kimden", cats["kimden"])
+    values["kimden"] = pick(st, "Kimden", cats["kimden"])
     return values
+
+
+def missing_fields(values: dict) -> list[str]:
+    """Doldurulması zorunlu ama boş kalan alanların ekrandaki adları."""
+    return [label for key, label in REQUIRED_FIELDS.items() if values[key] is None]
 
 
 def contribution_chart(table: pd.DataFrame):
@@ -164,7 +178,13 @@ def main() -> None:
 
     # Tahmin yalnızca düğmeye basılınca yapılır; basılan andaki girdiler saklanır.
     # Sonra bir alan değişirse eski tahmin gizlenir (yanlış araca ait sonuç görünmesin).
+    # Alanlar boş başlar (yer tutucu); zorunlu alan eksikse tahmin yapılmaz.
     if st.button("Tahmini göster", type="primary"):
+        missing = missing_fields(values)
+        if missing:
+            st.session_state.pop("submitted", None)
+            st.warning("Lütfen şu alanları doldurun: " + ", ".join(missing) + ".")
+            return
         st.session_state["submitted"] = values
     submitted = st.session_state.get("submitted")
     if submitted is None:
