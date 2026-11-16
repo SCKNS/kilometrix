@@ -1,0 +1,130 @@
+train: 40391 satır; test 10068 satır (AÇILMADI)
+aday sayısı: 17 (+2 baseline); öğrenme oranı (ağaçlar) 0.05
+
+fold 1: train 32335 satır / 30870 grup, doğrulama 8056 satır / 7718 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 73335.00000000001, 'fiyat_ust': 25833000.00000054, 'km_ust': 933320.0000000215} -> eğitimden -0 satır; doğrulamada sınır dışı (atılmadı) 17 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7744, 'marka+seri': 290, 'marka': 22}
+fold 2: train 32315 satır / 30870 grup, doğrulama 8076 satır / 7718 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 22264500.000001136, 'km_ust': 940000.0} -> eğitimden -0 satır; doğrulamada sınır dışı (atılmadı) 28 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7756, 'marka+seri': 294, 'marka': 24, 'genel': 2}
+fold 3: train 32322 satır / 30870 grup, doğrulama 8069 satır / 7718 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 23851850.000000015, 'km_ust': 896790.0000000009} -> eğitimden -0 satır; doğrulamada sınır dışı (atılmadı) 30 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7734, 'marka+seri': 308, 'marka': 22, 'genel': 5}
+fold 4: train 32292 satır / 30871 grup, doğrulama 8099 satır / 7717 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 25456349.99999984, 'km_ust': 940000.0} -> eğitimden -0 satır; doğrulamada sınır dışı (atılmadı) 22 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7763, 'marka+seri': 309, 'marka': 22, 'genel': 5}
+fold 5: train 32300 satır / 30871 grup, doğrulama 8091 satır / 7717 grup, ortak grup 0
+  ampirik sınırlar: {'fiyat_alt': 75000.0, 'fiyat_ust': 23335550.000000514, 'km_ust': 947010.0000000093} -> eğitimden -0 satır; doğrulamada sınır dışı (atılmadı) 29 satır
+  marka_model_medyan doğrulama düzeyleri: {'marka+seri+model': 7734, 'marka+seri': 332, 'marka': 24, 'genel': 1}
+
+CV sonuçları (5 fold ortalaması; yüzdeler %, MAE/RMSE TL; Q1-Q4 = fiyat çeyreğine göre MAPE)
+ana metrik: 'doğrulama' (yalnızca geçerlilik kuralı, hiç satır atılmadı)
+
+--- train ---
+                    MAPE MAPE_std medyan_APE      MAE       RMSE Q1 (ucuz)    Q2    Q3 Q4 (pahalı)
+model                                                                                             
+hgb_l63_n1500        6.2      0.1        4.4  104,148  4,267,737       8.7   6.3   5.1         4.8
+hgb_l31_n1500        7.5      0.1        5.3  114,062  4,377,556      11.0   7.5   5.9         5.5
+hgb_l63_n500         7.8      0.1        5.5  119,147  4,426,816      11.7   7.7   6.2         5.8
+xgb_d8_n1500         7.9      0.1        5.7   85,440  2,554,147      11.8   7.9   6.2         5.7
+hgb_l15_n1500        8.5      0.1        6.0  122,829  4,420,739      13.0   8.3   6.7         6.2
+hgb_l31_n500         8.8      0.0        6.1  126,936  4,461,724      13.4   8.4   6.8         6.4
+xgb_d8_n500          9.0      0.0        6.5  102,750  2,991,165      13.4   8.9   7.2         6.7
+xgb_d6_n1500         9.2      0.1        6.6  103,485  2,946,899      13.7   9.0   7.3         6.8
+hgb_l15_n500         9.5      0.0        6.7  135,331  4,486,767      14.6   9.0   7.4         7.2
+ridge_a0.1           9.9      0.1        6.7  113,161  3,183,753      15.6   9.3   7.6         7.1
+ridge_a0.3          10.0      0.1        6.8  124,616  3,643,936      15.8   9.4   7.7         7.3
+ridge_a1.0          10.4      0.1        7.1  138,442  4,218,220      16.2   9.7   7.9         7.7
+xgb_d6_n500         10.6      0.0        7.7  125,960  3,387,766      15.5  10.1   8.5         8.2
+xgb_d4_n1500        10.7      0.1        7.7  124,634  3,313,263      15.8  10.0   8.6         8.3
+ridge_a3.0          10.9      0.1        7.5  152,094  4,451,459      16.8  10.1   8.3         8.5
+ridge_a10.0         11.8      0.1        8.1  169,304  4,552,496      17.9  10.8   8.9         9.9
+xgb_d4_n500         12.4      0.0        9.1  153,149  3,868,897      17.9  11.3  10.2        10.2
+marka_model_medyan  13.6      0.1        9.1  138,235  3,005,286      18.1  13.1  12.2        10.9
+genel_medyan        73.5      0.2       48.5  574,012  4,884,556     183.7  30.3  21.1        59.6
+
+--- doğrulama ---
+                    MAPE MAPE_std medyan_APE      MAE       RMSE Q1 (ucuz)    Q2    Q3 Q4 (pahalı)
+model                                                                                             
+hgb_l31_n1500       10.6      0.2        6.7  149,847  4,108,481      17.4   9.9   7.4         7.6
+hgb_l63_n500        10.6      0.2        6.8  149,634  4,034,429      17.3   9.9   7.5         7.8
+hgb_l63_n1500       10.6      0.2        6.7  151,437  4,192,986      17.8   9.9   7.3         7.6
+hgb_l15_n1500       10.6      0.2        6.9  149,149  4,032,763      17.2  10.0   7.6         7.8
+hgb_l31_n500        10.7      0.2        7.0  151,038  4,008,923      17.1  10.0   7.8         8.1
+xgb_d8_n1500        10.9      0.1        7.1  147,878  3,935,956      17.3  10.3   7.9         8.1
+hgb_l15_n500        11.0      0.2        7.4  154,334  3,999,390      17.1  10.2   8.1         8.5
+xgb_d6_n1500        11.3      0.4        7.4  152,231  3,950,466      17.8  10.5   8.3         8.6
+xgb_d8_n500         11.3      0.1        7.6  153,099  3,941,793      17.5  10.6   8.4         8.7
+ridge_a1.0          11.8      0.3        7.9  166,127  4,036,219      18.3  11.0   8.9         9.1
+ridge_a0.3          11.8      0.3        7.8  165,473  4,059,537      18.4  11.0   9.0         9.0
+ridge_a0.1          11.9      0.3        7.8  164,990  4,066,972      18.4  11.0   9.1         9.0
+xgb_d6_n500         12.0      0.3        8.2  160,827  3,952,631      18.1  11.1   9.2         9.5
+ridge_a3.0          12.0      0.2        8.1  170,555  4,037,660      18.4  11.1   9.0         9.5
+xgb_d4_n1500        12.1      0.8        8.1  158,910  3,967,719      19.2  10.6   9.0         9.4
+ridge_a10.0         12.5      0.2        8.5  179,984  4,050,757      19.0  11.4   9.3        10.5
+xgb_d4_n500         13.2      0.4        9.3  173,267  3,973,608      19.7  11.6  10.5        10.9
+marka_model_medyan  17.7      0.2       11.6  214,660  4,079,904      24.1  17.2  15.3        14.3
+genel_medyan        73.5      1.2       48.5  573,970  4,415,432     183.7  30.3  21.1        59.6
+
+--- doğrulama_süzülmüş ---
+                    MAPE MAPE_std medyan_APE      MAE       RMSE Q1 (ucuz)    Q2    Q3 Q4 (pahalı)
+model                                                                                             
+hgb_l31_n1500       10.3      0.2        6.7   80,960    346,329      16.6   9.9   7.4         7.4
+hgb_l63_n500        10.4      0.1        6.8   82,387    344,971      16.5   9.9   7.5         7.6
+hgb_l63_n1500       10.4      0.2        6.7   81,311    366,765      17.0   9.9   7.3         7.4
+hgb_l15_n1500       10.4      0.2        6.9   82,138    338,103      16.4  10.0   7.6         7.6
+hgb_l31_n500        10.5      0.2        7.0   83,994    331,637      16.3  10.0   7.8         7.9
+xgb_d8_n1500        10.7      0.1        7.1   84,836    323,449      16.6  10.3   7.9         8.0
+hgb_l15_n500        10.8      0.2        7.3   88,028    343,146      16.4  10.2   8.1         8.4
+xgb_d6_n1500        11.0      0.4        7.4   88,341    320,120      17.1  10.5   8.3         8.4
+xgb_d8_n500         11.1      0.1        7.5   89,703    330,598      16.8  10.6   8.4         8.6
+ridge_a1.0          11.6      0.2        7.9   95,999    417,126      17.5  11.0   8.9         8.9
+ridge_a0.3          11.6      0.3        7.8   95,106    422,546      17.6  11.0   9.0         8.8
+ridge_a0.1          11.6      0.3        7.8   95,400    431,277      17.6  11.0   9.1         8.8
+ridge_a3.0          11.7      0.2        8.0   99,553    415,970      17.6  11.1   9.0         9.3
+xgb_d6_n500         11.7      0.3        8.2   96,300    332,860      17.4  11.1   9.2         9.4
+xgb_d4_n1500        11.8      0.8        8.1   95,326    342,400      18.4  10.6   9.0         9.2
+ridge_a10.0         12.3      0.2        8.4  108,132    432,174      18.2  11.4   9.3        10.3
+xgb_d4_n500         12.9      0.4        9.3  108,107    351,438      18.9  11.6  10.5        10.7
+marka_model_medyan  17.4      0.3       11.6  146,490    526,016      23.2  17.2  15.3        14.2
+genel_medyan        72.2      1.4       48.5  486,690  1,067,575     179.4  30.3  21.1        59.4
+
+train - doğrulama MAPE farkı (aşırı öğrenme göstergesi; negatif = train daha iyi):
+not: hgb train MAPE'si temiz değil (TargetEncoder train'i tam-train kodlarıyla tahmin eder); hgb için fark yalnızca kaba gösterge
+model
+hgb_l63_n1500        -4.4
+marka_model_medyan   -4.1
+hgb_l31_n1500        -3.1
+xgb_d8_n1500         -3.0
+hgb_l63_n500         -2.8
+xgb_d8_n500          -2.3
+hgb_l15_n1500        -2.1
+xgb_d6_n1500         -2.1
+hgb_l31_n500         -2.0
+ridge_a0.1           -2.0
+ridge_a0.3           -1.8
+hgb_l15_n500         -1.5
+ridge_a1.0           -1.4
+xgb_d4_n1500         -1.4
+xgb_d6_n500          -1.4
+ridge_a3.0           -1.1
+xgb_d4_n500          -0.8
+ridge_a10.0          -0.7
+genel_medyan         -0.0
+
+fold başına doğrulama MAPE (aile en iyileri + baseline):
+model  genel_medyan  marka_model_medyan  ridge_a1.0  hgb_l31_n1500  xgb_d8_n1500
+fold                                                                            
+1             72.78               17.55       11.36          10.26         10.74
+2             72.84               17.56       11.84          10.49         10.95
+3             72.50               17.56       12.11          10.83         11.00
+4             74.31               18.11       11.87          10.68         10.95
+5             75.28               17.80       11.95          10.55         10.91
+
+aile en iyileri (seçim kuralı: en iyiye 0.1 puandan yakın ilk basit aile):
+         en_iyi_ayar    MAPE
+aile                        
+ridge     ridge_a1.0  11.824
+hgb    hgb_l31_n1500  10.560
+xgb     xgb_d8_n1500  10.909
+SEÇİLEN: hgb_l31_n1500 -> ('hgb', {'max_leaf_nodes': 31, 'max_iter': 1500})

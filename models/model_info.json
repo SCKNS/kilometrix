@@ -1,0 +1,17 @@
+{
+  "model": "hgb_l31_n1500",
+  "aile": "hgb",
+  "parametreler": {
+    "max_leaf_nodes": 31,
+    "max_iter": 1500
+  },
+  "hedef": "log(fiyat), tahmin TL'ye geri çevrilir",
+  "train_satir": 40391,
+  "test_metrikleri": {
+    "MAPE": 10.392,
+    "medyan_APE": 6.671,
+    "MAE": 98095.845,
+    "RMSE": 810400.666
+  },
+  "sklearn": "1.9.1"
+}

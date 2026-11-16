@@ -8,6 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 REPORTS_DIR = PROJECT_ROOT / "reports"
+MODELS_DIR = PROJECT_ROOT / "models"
 
 # Ham dosyalar (kaynakları docs/DATA.md'de)
 ARABAM_CSV = RAW_DIR / "car_price_prediction.csv"  # Tanrıverdi, arabam.com, Haziran 2025

@@ -6,7 +6,7 @@
 - [x] Adım 2: Temizleme — **TAMAMLANDI**
 - [x] Adım 3: Özellik hazırlama, basit baseline model, hata ölçümü (aşağıdaki "Değerlendirme kuralları"na göre; test açılmaz) — **TAMAMLANDI**
 - [x] KONTROL (Adım 3 sonucu: Ridge CV MAPE %11,8 → eşiğin altında; kullanıcı onayladı): **Doğrulama (CV) MAPE'si** yaklaşık %20'nin üstündeyse dur, durumu anlat, birlikte karar verelim. Test MAPE'si bu kararda kullanılmaz.
-- [ ] Adım 4: Model karşılaştırma ve ayar (CV ile); en sonda seçilen nihai model test setinde **bir kez** değerlendirilir
+- [x] Adım 4: Model karşılaştırma ve ayar (CV ile); en sonda seçilen nihai model test setinde **bir kez** değerlendirilir — **TAMAMLANDI**
 - [ ] Adım 5: SHAP ve grafikler
 - [ ] Adım 6: Streamlit arayüzü
 - [ ] Adım 7: README (atıfı DATA.md'den taşı), Streamlit Cloud yayını (yayında Python 3.13 seçilir; o an Cloud'da yoksa sürümler yeniden sabitlenir)
@@ -330,3 +330,52 @@ Bu bir ikinci el araç fiyat tahmin projesi (klasik ML, LLM yok). Proje klasör�
 3. (Düşük) Train-test ortak grup > 0 ise artık `ValueError` (önceden yalnızca raporlanıyordu).
 4. (Düşük) "MAPE'nin çoğu ucuz çeyrekten" → "en büyük katkı ucuz çeyrekten" (%38,5; çoğunluk değil).
 5. Çıktılar ve `review_diff.patch` yeniden üretildi.
+
+### Adım 4 — Model karşılaştırma (CV), nihai model, tek test değerlendirmesi
+**Durum:** TAMAMLANDI (kullanıcı onayıyla commit edildi)
+**Commit mesajı:** `Adım 4: model seçimi ve test değerlendirmesi`
+
+**Yapılanlar**
+- `features.py`: `build_tree_preprocessor` (sayısallar olduğu gibi; az değerli kategoriler sıra numarası,
+  `marka_seri` / `marka_seri_model` hedef kodlama `TargetEncoder`, kendi içinde 5 katlı çapraz uydurma) +
+  `tree_categorical_indices`.
+- `train.py`: `evaluate_fold` / `run_cv` isteğe bağlı `models` sözlüğü alıyor (varsayılan Adım 3 modelleri;
+  Adım 3 raporu yeniden üretildi, fark 0 satır).
+- `compare.py` (yeni): 17 aday (Ridge alpha ×5, HGB yaprak×ağaç ×6, XGBoost derinlik×ağaç ×6; ağaçlarda
+  öğrenme oranı 0,05) + 2 baseline, Adım 3'teki aynı 5 grup fold'unda. Seçim kuralı sonuçlardan önce
+  docstring'e yazıldı. Çıktı `reports/adim4_karsilastirma.txt`. Test açılmaz.
+- Ek kontrol (kuralın dışında, testten önce): XGBoost'un en iyisi ızgara kenarındaydı; 3 büyük ayar daha
+  denendi, en iyisi 10,75 (HGB 10,56'yı geçmedi). `reports/adim4_xgb_ek_kontrol.txt`.
+- `final.py` (yeni): seçilen model sabit (`FINAL_NAME`), bölme SHA-256 ile Adım 3'e karşı doğrulanır, tüm
+  train'e eğitilir, test **bir kez** açılır; test raporu zaten varsa betik çalışmaz.
+  Çıktılar `reports/adim4_test.txt`, `models/arac_fiyat_model.joblib` (2,40 MB), `models/model_info.json`.
+
+**Seçim** (CV doğrulama MAPE, 5 fold ortalaması): HGB `hgb_l31_n1500` 10,56 ± 0,2 · XGBoost `xgb_d8_n1500`
+10,91 · Ridge `ridge_a1.0` 11,82 · marka-model medyanı 17,7 · genel medyan 73,5. HGB 5 fold'un hepsinde en iyi.
+
+**Test (bir kez; dal 3, iyimser olabilecek tahmin)**
+| model | train MAPE | test MAPE | medyan APE | MAE (TL) | RMSE (TL) |
+|---|---|---|---|---|---|
+| genel medyan | 73,7 | 73,9 | 48,8 | 529 198 | 1,78 M |
+| marka-model medyanı | 13,8 | 16,8 | 11,6 | 156 755 | 0,79 M |
+| hgb_l31_n1500 | 7,7 | 10,4 | 6,7 | 98 096 | 0,81 M |
+- Test fiyat çeyrekleri (HGB): Q1 17,1 · Q2 9,5 · Q3 7,3 · Q4 7,4. Train'de görülmemiş marka+seri+model:
+  294 satır, MAPE 22,4 (görülmüş 9 774 satır: 10,0).
+- Duyarlılık (ampirik sınır dışı 33 test satırı hariç): HGB 10,2 MAPE, RMSE 0,33 M.
+
+**Açık sorunlar / Adım 5-6'ya devredilenler**
+- HGB'de kategorik bölmeler var; SHAP TreeExplainer desteklemeyebilir → Adım 5'te kontrol, gerekirse ham
+  özellikler üzerinde modelden bağımsız açıklayıcı.
+- Model dosyası `arac_fiyat.features.add_features`'a başvuruyor ve sklearn 1.9.1'e bağlı: uygulamada paket
+  yolu ve sürüm aynı olmalı.
+- Görülmemiş araç modelinde ve ucuz araçlarda hata yüksek; arayüzde kullanıcıya belirtilmeli.
+
+**Denetim 1 düzeltmeleri** (4 bulgunun 4'ü kabul edildi; tur öncesi staged ağaç `1c3424048279b57ac31d1312062e68a9fdb21b2c`)
+1. (Orta) HGB train MAPE'si temiz değil (TargetEncoder train'i tam-train kodlarıyla tahmin eder). Tanı
+   (`reports/adim4_te_train_kontrol.txt`, yalnızca train): çapraz kodla 7,45, olağan 7,70 → train-test farkı
+   iyimser değil, ≈3,0 puan; aşırı uyum yorumu korunuyor. `compare.py` uyarı satırı ekliyor (yeniden çalıştırıldı,
+   tek fark bu satır), `features.py` docstring notu.
+2. (Orta) Yeniden ilan sızıntısı ölçülemiyor: zaten yazılı sınır; "CV-test tutarlılığı bunu dışlamaz" eklendi.
+3. (Düşük) Tek test açılışı kanıtlanamıyor: iddia yumuşatıldı; `final.py` rapor dosyasını test açılmadan önce
+   yazıyor (çökmeye dayanıklı koruma). Koşudan sonra değişti, final yeniden çalıştırılmadı.
+4. (Düşük) Ridge farkı 1,1-1,4 puan; yeniden yükleme kontrolü "ilk 200 test satırı" olarak düzeltildi.

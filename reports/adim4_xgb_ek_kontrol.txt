@@ -1,0 +1,29 @@
+Ek kontrol (seçim kuralının DIŞINDA, test açılmadan önce): XGBoost ızgara kenarı genişletildi.
+Neden: compare.py'de XGBoost'un en iyisi (xgb_d8_n1500, CV MAPE 10.909) ızgaranın kenarındaydı.
+Aynı bölme/fold'lar, aynı build_model('xgb', ...). Seçimi değiştirmez; yalnızca raporlanır.
+
+--- betik ---
+# Ek kontrol (seçim kuralının dışında): XGBoost ızgara kenarını genişletince HGB'yi geçiyor mu?
+import pandas as pd
+from arac_fiyat.compare import build_model
+from arac_fiyat.train import CLEAN_CSV, run_cv, summarize_cv
+from arac_fiyat.split import holdout_split
+train, _ = holdout_split(pd.read_csv(CLEAN_CSV))
+models = {f"xgb_d{d}_n{n}": build_model("xgb", {"max_depth": d, "n_estimators": n}) for d, n in [(10, 1500), (8, 3000), (10, 3000)]}
+log = []
+t = summarize_cv(run_cv(train, log, use_filter=False, models=models))
+print(t.loc["doğrulama", ["MAPE", "MAPE_std", "medyan_APE"]].round(3).to_string())
+print(t.loc["train", ["MAPE"]].round(2).to_string())
+
+--- çıktı (doğrulama ortalaması, sonra train MAPE) ---
+                 MAPE  MAPE_std  medyan_APE
+model                                      
+xgb_d10_n1500  10.909     0.099       6.999
+xgb_d8_n3000   10.750     0.115       6.922
+xgb_d10_n3000  10.838     0.079       6.866
+               MAPE
+model              
+xgb_d10_n1500  6.60
+xgb_d8_n3000   7.08
+xgb_d10_n3000  5.82
+

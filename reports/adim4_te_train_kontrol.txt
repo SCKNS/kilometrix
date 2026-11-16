@@ -1,0 +1,47 @@
+Adım 4 denetim 1, bulgu 1 tanısı (yalnızca train; test açılmadı). Betik ve çıktı.
+Çalıştırma: PYTHONPATH=src python te_train_check.py (proje dışı geçici betik; aşağıda tam metni)
+
+--- betik ---
+"""Tanı: HGB train MAPE'si, TargetEncoder tam-train kodlarıyla ve çapraz (eğitimdeki) kodlarla.
+
+Yalnızca train kullanılır; test AÇILMAZ.
+"""
+
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.base import clone
+
+from arac_fiyat.cleaning import TARGET
+from arac_fiyat.evaluate import regression_metrics
+from arac_fiyat.final import MODEL_PATH
+from arac_fiyat.split import holdout_split
+from arac_fiyat.train import CLEAN_CSV
+
+train, _ = holdout_split(pd.read_csv(CLEAN_CSV))
+model = joblib.load(MODEL_PATH)
+pipe = model.regressor_
+feat, pre, hgb = pipe[0], pipe[1], pipe[2]
+y = train[TARGET]
+
+# (a) olağan predict: TargetEncoder tam train kodları (satırın kendi fiyatı dahil)
+pred_full = model.predict(train)
+# kontrol: elle aynı yol
+x1 = feat.transform(train)
+pred_full_manual = np.exp(hgb.predict(pre.transform(x1)))
+# (b) eğitimde modelin gördüğü çapraz kodlar: aynı ön işlemeyi aynı y ve random_state ile yeniden fit_transform
+x_cross = clone(pre).fit_transform(x1, np.log(y))
+pred_cross = np.exp(hgb.predict(x_cross))
+
+print(f"train satır: {len(train)}")
+print(f"olağan predict == elle tam-kod yolu: {np.allclose(pred_full, pred_full_manual)}")
+for label, pred in [("tam-train kodları (olağan predict)", pred_full),
+                    ("çapraz kodlar (eğitimdeki girdi)", pred_cross)]:
+    m = regression_metrics(y, pred)
+    print(f"{label}: MAPE {m['MAPE']:.2f}, medyan APE {m['medyan_APE']:.2f}")
+
+--- çıktı ---
+train satır: 40391
+olağan predict == elle tam-kod yolu: True
+tam-train kodları (olağan predict): MAPE 7.70, medyan APE 5.38
+çapraz kodlar (eğitimdeki girdi): MAPE 7.45, medyan APE 5.32

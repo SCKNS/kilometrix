@@ -94,11 +94,13 @@ def keep_mask(df: pd.DataFrame, bounds: dict[str, float]) -> pd.Series:
 
 
 def evaluate_fold(train: pd.DataFrame, val: pd.DataFrame, log: list[str],
-                  use_filter: bool) -> list[dict]:
+                  use_filter: bool, models: dict | None = None) -> list[dict]:
     """Bir fold'da tüm modelleri eğitir; train ve doğrulama metriklerini satır listesi döndürür.
 
     use_filter=True ise ampirik sınırlar dışındaki train satırları eğitimden çıkarılır.
+    models verilmezse Adım 3'ün modelleri (make_models) kullanılır.
     """
+    models = make_models() if models is None else models
     bounds = fit_train_filter(train)
     fit_rows = train[keep_mask(train, bounds)] if use_filter else train
     val_kept = keep_mask(val, bounds)
@@ -107,7 +109,7 @@ def evaluate_fold(train: pd.DataFrame, val: pd.DataFrame, log: list[str],
 
     edges = price_bin_edges(train[TARGET])
     rows = []
-    for name, model in make_models().items():
+    for name, model in models.items():
         model = clone(model).fit(fit_rows, fit_rows[TARGET])
         # train metrikleri tüm fold-train üzerinde (doğrulamayla aynı tanım: yalnızca geçerlilik kuralı)
         sets = {"train": train, "doğrulama": val, "doğrulama_süzülmüş": val[val_kept]}
@@ -129,7 +131,8 @@ def evaluate_fold(train: pd.DataFrame, val: pd.DataFrame, log: list[str],
     return rows
 
 
-def run_cv(train: pd.DataFrame, log: list[str], use_filter: bool) -> pd.DataFrame:
+def run_cv(train: pd.DataFrame, log: list[str], use_filter: bool,
+           models: dict | None = None) -> pd.DataFrame:
     """Train içinde grup bazlı CV; her fold için grup/satır sayısını ve sızıntı kontrolünü yazar."""
     all_rows = []
     for i, (tr_idx, val_idx) in enumerate(cv_folds(train), start=1):
@@ -141,7 +144,7 @@ def run_cv(train: pd.DataFrame, log: list[str], use_filter: bool) -> pd.DataFram
                    f" doğrulama {len(val)} satır / {n_val_groups} grup, ortak grup {shared}")
         if shared:
             raise ValueError(f"fold {i}: train ve doğrulama grup paylaşıyor")
-        for row in evaluate_fold(tr, val, log, use_filter):
+        for row in evaluate_fold(tr, val, log, use_filter, models):
             all_rows.append({"fold": i, **row})
     return pd.DataFrame(all_rows)
 
