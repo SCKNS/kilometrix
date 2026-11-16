@@ -32,7 +32,8 @@ def get_artifacts() -> dict:
     return P.load_artifacts()
 
 
-@st.cache_data(show_spinner="Açıklama hesaplanıyor…")
+# kendi bekleme yazısı kapalı: bekleme göstergesi main() içinde düğmenin altında gösterilir
+@st.cache_data(show_spinner=False)
 def cached_explanation(values_items: tuple) -> tuple[pd.DataFrame, float]:
     """Aynı girdi için SHAP yeniden hesaplanmasın (girdi, sözlüğün sıralı demeti)."""
     art = get_artifacts()
@@ -117,8 +118,7 @@ def effect_text(multiplier: float) -> str:
     return f"{sign}%{P.tr_number(abs(multiplier - 1) * 100, 1)}"
 
 
-def show_explanation(values: dict, price: float) -> None:
-    table, base = cached_explanation(tuple(values.items()))
+def show_explanation(table: pd.DataFrame, base: float, price: float) -> None:
     st.subheader("Tahmin nasıl oluştu?")
     st.write(f"Başlangıç noktası **{P.tr_number(base)} TL**: modelin, eğitim verisinden seçilmiş 200 "
              "ilan için tahminlerinin **geometrik ortalaması** (log fiyat tahminlerinin ortalamasının "
@@ -194,8 +194,12 @@ def main() -> None:
         st.info("Bilgiler değişti. Yeni tahmin için **Tahmini göster** düğmesine tekrar tıklayın.")
         return
 
-    row = P.make_input_frame(values)
-    price = P.predict_price(art["model"], row)
+    # Hesap (özellikle SHAP açıklaması) birkaç saniye sürebilir; kullanıcı beklediğini anlasın diye
+    # düğmenin hemen altında süre sayan bir bekleme göstergesi çıkar. Sonuçlar hesap bitince birlikte görünür.
+    with st.spinner("Tahmin hesaplanıyor, birkaç saniye sürebilir…", show_time=True):
+        row = P.make_input_frame(values)
+        price = P.predict_price(art["model"], row)
+        table, base = cached_explanation(tuple(values.items()))
     low, high = P.error_range(price, art["info"]["test_metrikleri"]["medyan_APE"])
 
     st.divider()
@@ -209,7 +213,7 @@ def main() -> None:
         st.warning(note)
 
     st.divider()
-    show_explanation(values, price)
+    show_explanation(table, base, price)
 
 
 main()

@@ -627,3 +627,23 @@ sonuçlarının iyimser olabileceği uyarısı ayrı konu, değişmedi. Kod, mod
 **Açık sorunlar**
 - Model değişince yer tutucu değiştiği için Streamlit yıl/km alanlarını sıfırlıyor (eski sürümde de sıfırlanıyordu).
 - Gerçek tarayıcıda görsel düzen görülmedi.
+
+### Adım 7 düzeltme 3 — tahmin sırasında bekleme göstergesi
+**Durum:** TAMAMLANDI (denetçiye verilmeden kullanıcı onayıyla commit edildi ve push'landı)
+**Commit mesajı:** `Adım 7: düzeltme`
+
+**Yapılanlar** (kullanıcı isteği: "Tahmini göster"e basınca hesaplandığı belli olmuyordu)
+- `app/streamlit_app.py`: fiyat tahmini ve SHAP açıklaması tek bir `st.spinner(..., show_time=True)` içinde,
+  düğmenin hemen altında hesaplanıyor ("Tahmin hesaplanıyor, birkaç saniye sürebilir…" + geçen süre).
+  Sonuçlar (fiyat, uyarılar, açıklama) hesap bitince birlikte görünüyor.
+- `cached_explanation` kendi küçük bekleme yazısını göstermiyor (`show_spinner=False`); eskiden bu yazı
+  sayfanın altında, fiyatın ve uyarıların altında çıkıyordu.
+- `show_explanation(table, base, price)`: açıklama artık dışarıda hesaplanıp parametre olarak geliyor.
+
+**Kontroller** (AppTest, betik repo dışında)
+- Tofaş Şahin 1.6, 1993, 155.000 km, ilk seçenekler → **151.229 TL**, taban 653.383 TL (öncekiyle aynı),
+  14 satırlık açıklama tablosu, hata yok. Km değişince sonuç gizleniyor; tekrar tıklayınca 117.772 TL.
+- Yerel süre: SHAP ≈0,63 sn, tahmin ≈0,07 sn. Yeni paket yok, model/veri/metrik değişmedi.
+
+**Açık sorunlar**
+- Bekleme göstergesi AppTest ile görülemez; gerçek tarayıcıda görülmedi.
